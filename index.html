@@ -8,17 +8,21 @@
   <meta name="description" content="TV browser home page with clock, code entry, search and bookmarks.">
   <meta name="color-scheme" content="dark">
   <script>
+    var supports = window.CSS && window.CSS.supports;
+    document.documentElement.className +=
+      (!supports || !CSS.supports("display", "grid") ? " legacy-layout" : "") +
+      (!supports || !CSS.supports("color", "var(--white)") ? " legacy-colors" : "");
     try {
-      const settings = JSON.parse(localStorage.getItem("tvHome.settings") || "null");
-      const darkModeSettingIsSet = settings && settings.darkMode !== null && settings.darkMode !== undefined;
-      const selectedScheme = settings && settings.darkMode ? "dark" : "light";
-      const prefferedScheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      const scheme = darkModeSettingIsSet ? selectedScheme : "light dark";
+      var settings = JSON.parse(localStorage.getItem("tvHome.settings") || "null");
+      var darkModeSettingIsSet = settings && settings.darkMode !== null && settings.darkMode !== undefined;
+      var selectedScheme = settings && settings.darkMode ? "dark" : "light";
+      var preferredScheme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      var scheme = darkModeSettingIsSet ? selectedScheme : "light dark";
       document.querySelector('meta[name="color-scheme"]').content = scheme;
-      document.documentElement.dataset.accent = settings && settings.accent ? settings.accent : "orange";
-      document.documentElement.dataset.scheme = darkModeSettingIsSet ? selectedScheme : prefferedScheme;
+      document.documentElement.setAttribute("data-accent", settings && settings.accent ? settings.accent : "orange");
+      document.documentElement.setAttribute("data-scheme", darkModeSettingIsSet ? selectedScheme : preferredScheme);
     } catch (error) {
-      document.documentElement.dataset.accent = "orange";
+      document.documentElement.setAttribute("data-accent", "orange");
     }
   </script>
   <title>TV Dash</title>
@@ -30,8 +34,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="https://aftv.news">
   <link rel="dns-prefetch" href="https://www.google.com">
-  <link rel="stylesheet" href="assets/styles.css?v=669800399d36cfd6">
-  <script src="assets/app.js?v=2e8004d6b0dc086e" defer fetchpriority="high"></script>
+  <link rel="stylesheet" href="assets/styles.css?v=e99157f55b06d439">
+  <script src="assets/app.js?v=c200a622afd6adbd" defer fetchpriority="high"></script>
 
   <!-- Fonts load without blocking the first paint -->
   <link rel="stylesheet"

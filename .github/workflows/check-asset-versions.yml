@@ -15,7 +15,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - run: node .github/scripts/version-assets.js --check
+      - run: node scripts/version-assets.js --check
 
   update-asset-versions:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - run: node .github/scripts/version-assets.js
+      - run: node scripts/version-assets.js
       - name: Commit updated asset versions
         id: commit
         run: |

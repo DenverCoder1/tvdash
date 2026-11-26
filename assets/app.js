@@ -1,11 +1,11 @@
 (function () {
     "use strict";
 
-    const STORAGE_KEY = "tvHome.bookmarks";
-    const SETTINGS_KEY = "tvHome.settings";
-    const MAX_BOOKMARKS = 12; // two rows, so the home screen never needs scrolling
-    const MAX_DIGITS = 10;
-    const DEFAULT_SETTINGS = {
+    var STORAGE_KEY = "tvHome.bookmarks";
+    var SETTINGS_KEY = "tvHome.settings";
+    var MAX_BOOKMARKS = 12; // two rows, so the home screen never needs scrolling
+    var MAX_DIGITS = 10;
+    var DEFAULT_SETTINGS = {
         accent: "orange",
         darkMode: null,
         hour24: false,
@@ -14,13 +14,13 @@
         searchEngines: ["google"],
         searchEngine: "google",
     };
-    const DEFAULTS = [
+    var DEFAULTS = [
         { title: "YouTube", url: "https://www.youtube.com/" },
         { title: "GitHub", url: "https://github.com/" },
         { title: "Speed Test", url: "https://www.fast.com/" },
         { title: "FMHY", url: "https://fmhy.net/video#streaming-sites" },
     ];
-    const SEARCH_ENGINES = {
+    var SEARCH_ENGINES = {
         google: { name: "Google", icon: "google-color.svg", url: "https://www.google.com/search?q=" },
         duckduckgo: { name: "DuckDuckGo", icon: "duckduckgo-color.svg", url: "https://duckduckgo.com/?q=" },
         brave: { name: "Brave", icon: "brave-color.svg", url: "https://search.brave.com/search?q=" },
@@ -33,7 +33,7 @@
         },
         ecosia: { name: "Ecosia", icon: "ecosia-color.svg", url: "https://www.ecosia.org/search?q=" },
     };
-    const DATE_FORMATS = {
+    var DATE_FORMATS = {
         "long-day-first": {
             preview: "datePreviewDayFirst",
             locale: "en-GB",
@@ -51,19 +51,31 @@
         return document.querySelector(query);
     }
 
+    function defaultSettings() {
+        var copy = {};
+        Object.keys(DEFAULT_SETTINGS).forEach(function (key) {
+            copy[key] = DEFAULT_SETTINGS[key];
+        });
+        copy.searchEngines = DEFAULT_SETTINGS.searchEngines.slice();
+        return copy;
+    }
+
     /* ---------- Settings ---------- */
     function loadSettings() {
         try {
-            const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+            var saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
             if (saved && typeof saved === "object") {
-                const loaded = { ...DEFAULT_SETTINGS, ...saved };
+                var loaded = defaultSettings();
+                Object.keys(DEFAULT_SETTINGS).forEach(function (key) {
+                    if (Object.prototype.hasOwnProperty.call(saved, key)) loaded[key] = saved[key];
+                });
                 delete loaded.reduceMotion;
                 if (loaded.dateFormat === "long" || loaded.dateFormat === "day-first") {
                     loaded.dateFormat = "long-day-first";
                 } else if (loaded.dateFormat === "month-first") {
                     loaded.dateFormat = "long-month-first";
                 }
-                if (!Object.hasOwn(DATE_FORMATS, loaded.dateFormat)) {
+                if (!Object.prototype.hasOwnProperty.call(DATE_FORMATS, loaded.dateFormat)) {
                     console.warn("Unrecognized saved date format. Using the full date.");
                     loaded.dateFormat = DEFAULT_SETTINGS.dateFormat;
                 }
@@ -74,7 +86,7 @@
                 if (!Array.isArray(loaded.searchEngines) || !loaded.searchEngines.length) {
                     loaded.searchEngines = DEFAULT_SETTINGS.searchEngines.slice();
                 }
-                if (!loaded.searchEngines.includes(loaded.searchEngine)) {
+                if (loaded.searchEngines.indexOf(loaded.searchEngine) === -1) {
                     loaded.searchEngine = loaded.searchEngines[0];
                 }
                 return loaded;
@@ -82,7 +94,7 @@
         } catch (error) {
             /* storage blocked or damaged: use defaults */
         }
-        return { ...DEFAULT_SETTINGS };
+        return defaultSettings();
     }
 
     function saveSettings() {
@@ -95,8 +107,8 @@
         }
     }
 
-    const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
-    let settings = loadSettings();
+    var systemDark = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : { matches: false };
+    var settings = loadSettings();
 
     function focusDefaultInput() {
         (settings.defaultFocus === "search" ? $("#query") : $("#code")).focus();
@@ -107,11 +119,11 @@
     }
 
     function applySettings() {
-        const dark = resolvedDarkMode();
-        const modeName = dark ? "dark" : "light";
-        const colorScheme = settings.darkMode === null ? "light dark" : modeName;
-        document.documentElement.dataset.accent = settings.accent;
-        document.documentElement.dataset.scheme = modeName;
+        var dark = resolvedDarkMode();
+        var modeName = dark ? "dark" : "light";
+        var colorScheme = settings.darkMode === null ? "light dark" : modeName;
+        document.documentElement.setAttribute("data-accent", settings.accent);
+        document.documentElement.setAttribute("data-scheme", modeName);
         document.querySelector('meta[name="color-scheme"]').content = colorScheme;
         document.querySelector('meta[name="theme-color"]').content = dark ? "#0E0E10" : "#F2F2F5";
 
@@ -125,17 +137,17 @@
         Array.prototype.forEach.call(document.querySelectorAll('input[name="defaultFocus"]'), function (input) {
             input.checked = input.value === settings.defaultFocus;
         });
-        const accentInput = document.querySelector('input[name="accent"][value="' + settings.accent + '"]');
+        var accentInput = document.querySelector('input[name="accent"][value="' + settings.accent + '"]');
         if (accentInput) accentInput.checked = true;
         Array.prototype.forEach.call(document.querySelectorAll('input[name="searchEngineEnabled"]'), function (input) {
-            input.checked = settings.searchEngines.includes(input.value);
+            input.checked = settings.searchEngines.indexOf(input.value) !== -1;
         });
         updateSearchEnginePicker();
         tick();
     }
 
     function resetSettings() {
-        settings = { ...DEFAULT_SETTINGS, searchEngines: DEFAULT_SETTINGS.searchEngines.slice() };
+        settings = defaultSettings();
         saveSettings();
         applySettings();
     }
@@ -147,35 +159,48 @@
                 now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2) + "-" + ("0" + now.getDate()).slice(-2)
             );
         }
-        const preset = DATE_FORMATS[format];
-        const parts = new Intl.DateTimeFormat(preset.locale, preset.options).formatToParts(now);
-        const weekday = parts.find(function (part) {
-            return part.type === "weekday";
-        }).value;
-        const day = parts.find(function (part) {
-            return part.type === "day";
-        }).value;
-        const month = parts.find(function (part) {
-            return part.type === "month";
-        }).value;
+        var preset = DATE_FORMATS[format];
+        var weekday, day, month;
+        if (typeof Intl !== "undefined" && Intl.DateTimeFormat && Intl.DateTimeFormat.prototype.formatToParts) {
+            new Intl.DateTimeFormat(preset.locale, preset.options).formatToParts(now).forEach(function (part) {
+                if (part.type === "weekday") weekday = part.value;
+                if (part.type === "day") day = part.value;
+                if (part.type === "month") month = part.value;
+            });
+        } else {
+            weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][now.getDay()];
+            day = now.getDate();
+            month = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December",
+            ][now.getMonth()];
+        }
         return format === "long-day-first"
             ? weekday + ", " + day + " " + month
             : weekday + ", " + month + " " + day;
     }
 
     function tick() {
-        const now = new Date();
-        const time = now.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: !settings.hour24,
-        });
-        const date = formatDate(now, settings.dateFormat);
+        var now = new Date();
+        var time;
+        if (typeof Intl !== "undefined" && Intl.DateTimeFormat) {
+            time = now.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: !settings.hour24,
+            });
+        } else {
+            var hours = now.getHours();
+            time = ("0" + (settings.hour24 ? hours : hours % 12 || 12)).slice(-2) +
+                ":" + ("0" + now.getMinutes()).slice(-2);
+            if (!settings.hour24) time += hours < 12 ? " AM" : " PM";
+        }
+        var date = formatDate(now, settings.dateFormat);
         if ($("#time").textContent !== time) $("#time").textContent = time;
         if ($("#date").textContent !== date) $("#date").textContent = date;
         Object.keys(DATE_FORMATS).forEach(function (format) {
-            const preview = $("#" + DATE_FORMATS[format].preview);
-            const text = formatDate(now, format);
+            var preview = $("#" + DATE_FORMATS[format].preview);
+            var text = formatDate(now, format);
             if (preview.textContent !== text) preview.textContent = text;
         });
     }
@@ -183,58 +208,65 @@
     setInterval(tick, 1000);
 
     /* ---------- Address detection ---------- */
-    const LABEL = String.raw`[a-z0-9\u00a1-\uffff](?:[a-z0-9_\-\u00a1-\uffff]*[a-z0-9\u00a1-\uffff])?`;
-    const TLD = String.raw`(?:xn--[a-z0-9-]+|[a-z\u00a1-\uffff]{2,})`;
-    const REST = String.raw`(?::\d{1,5})?(?:[/?#]\S*)?$`;
-    const DOMAIN = new RegExp("^(?:" + LABEL + String.raw`\.)+` + TLD + String.raw`\.?` + REST, "i");
-    const OCTET = String.raw`(?:25[0-5]|2[0-4]\d|1?\d?\d)`;
-    const LOCAL = new RegExp("^(?:localhost|(?:" + OCTET + String.raw`\.){3}` + OCTET + ")" + REST, "i");
+    var LABEL = "[a-z0-9\\u00a1-\\uffff](?:[a-z0-9_\\-\\u00a1-\\uffff]*[a-z0-9\\u00a1-\\uffff])?";
+    var TLD = "(?:xn--[a-z0-9-]+|[a-z\\u00a1-\\uffff]{2,})";
+    var REST = "(?::\\d{1,5})?(?:[/?#]\\S*)?$";
+    var DOMAIN = new RegExp("^(?:" + LABEL + "\\.)+" + TLD + "\\.?" + REST, "i");
+    var OCTET = "(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)";
+    var LOCAL = new RegExp("^(?:localhost|(?:" + OCTET + "\\.){3}" + OCTET + ")" + REST, "i");
+
+    function parseUrl(value) {
+        var link = document.createElement("a");
+        link.href = value;
+        return link;
+    }
 
     // Returns a full web address, or null when the text is not one
     function toUrl(text) {
-        const value = text.trim();
-        let full;
+        var value = text.trim();
+        var full;
         if (!value || /\s/.test(value)) return null;
         if (/^https?:\/\//i.test(value)) full = value;
         else if (LOCAL.test(value)) full = "http://" + value;
         else if (DOMAIN.test(value)) full = "https://" + value;
         else return null;
         try {
-            const url = new URL(full);
-            return url.hostname ? url.href : null;
+            var url = parseUrl(full);
+            return /^https?:$/.test(url.protocol) && url.hostname ? url.href : null;
         } catch (error) {
             return null;
         }
     }
 
     /* ---------- Search bar ---------- */
-    const query = $("#query");
+    var query = $("#query");
 
     function updateSearchEnginePicker() {
-        const enabled = settings.searchEngines.filter(function (id) {
+        var enabled = settings.searchEngines.filter(function (id) {
             return SEARCH_ENGINES[id];
         });
-        const picker = $("#searchEnginePicker");
-        const select = $("#searchEngine");
-        const search = $("#searchForm");
+        var picker = $("#searchEnginePicker");
+        var select = $("#searchEngine");
+        var search = $("#searchForm");
 
         select.textContent = "";
         enabled.forEach(function (id) {
-            const option = document.createElement("option");
+            var option = document.createElement("option");
             option.value = id;
             option.textContent = SEARCH_ENGINES[id].name;
             select.appendChild(option);
         });
 
-        if (!enabled.includes(settings.searchEngine)) settings.searchEngine = enabled[0] || "google";
+        if (enabled.indexOf(settings.searchEngine) === -1) settings.searchEngine = enabled[0] || "google";
         select.value = settings.searchEngine;
         $("#searchEngineIcon").src = "assets/search-icons/" + SEARCH_ENGINES[settings.searchEngine].icon;
         $("#searchEngineIcon").alt = "";
 
-        const multiple = enabled.length > 1;
+        var multiple = enabled.length > 1;
         picker.hidden = !multiple;
-        search.classList.toggle("has-engine-picker", multiple);
-        const name = SEARCH_ENGINES[settings.searchEngine].name;
+        if (multiple) search.classList.add("has-engine-picker");
+        else search.classList.remove("has-engine-picker");
+        var name = SEARCH_ENGINES[settings.searchEngine].name;
         query.placeholder = "Search " + name + " or type a web address";
         query.setAttribute("aria-label", "Search " + name + " or type a web address");
     }
@@ -251,19 +283,19 @@
 
     $("#searchForm").addEventListener("submit", function (event) {
         event.preventDefault();
-        const text = query.value.trim();
+        var text = query.value.trim();
         if (!text) return query.focus();
-        const url = toUrl(text);
+        var url = toUrl(text);
         if (url) {
             window.location.href = url;
         } else {
-            const engine = SEARCH_ENGINES[settings.searchEngine] || SEARCH_ENGINES.google;
+            var engine = SEARCH_ENGINES[settings.searchEngine] || SEARCH_ENGINES.google;
             window.location.href = engine.url + encodeURIComponent(text);
         }
     });
 
     /* ---------- Code entry ---------- */
-    const code = $("#code");
+    var code = $("#code");
 
     function updateCode() {
         code.value = code.value.replace(/\D/g, "").slice(0, MAX_DIGITS);
@@ -283,7 +315,7 @@
     /* ---------- Bookmark storage ---------- */
     function load() {
         try {
-            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+            var saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
             if (Array.isArray(saved)) {
                 return saved
                     .filter(function (item) {
@@ -310,38 +342,39 @@
         }
     }
 
-    let bookmarks = load();
+    var bookmarks = load();
 
     /* ---------- Rendering ---------- */
     function make(tag, className, text) {
-        const element = document.createElement(tag);
+        var element = document.createElement(tag);
         if (className) element.className = className;
         if (text) element.textContent = text;
         return element;
     }
 
     function addFavicon(badge, url) {
-        const parsedUrl = new URL(url);
-        const sources = [
+        var parsedUrl = parseUrl(url);
+        var origin = parsedUrl.protocol + "//" + parsedUrl.host;
+        var sources = [
             "https://www.google.com/s2/favicons?domain_url=" +
-                encodeURIComponent(parsedUrl.origin) +
+                encodeURIComponent(origin) +
                 "&sz=64&default=404",
             "https://icons.duckduckgo.com/ip3/" + encodeURIComponent(parsedUrl.hostname) + ".ico",
-            new URL("/favicon.ico", parsedUrl.origin).href,
-            new URL("/favicon.svg", parsedUrl.origin).href,
-            new URL("/apple-touch-icon.png", parsedUrl.origin).href,
+            origin + "/favicon.ico",
+            origin + "/favicon.svg",
+            origin + "/apple-touch-icon.png",
         ];
         // Providers block pixel inspection; size checks can also reject genuine icons.
-        const placeholderSizes = [16, 48];
-        const image = make("img", "favicon");
-        let sourceIndex = 0;
+        var placeholderSizes = [16, 48];
+        var image = make("img", "favicon");
+        var sourceIndex = 0;
         image.alt = "";
         image.width = 64;
         image.height = 64;
         image.decoding = "async";
         image.setAttribute("fetchpriority", "low");
         image.addEventListener("load", function () {
-            const placeholderSize = placeholderSizes[sourceIndex - 1];
+            var placeholderSize = placeholderSizes[sourceIndex - 1];
             if (placeholderSize && image.naturalWidth === placeholderSize && image.naturalHeight === placeholderSize) {
                 tryNextSource();
                 return;
@@ -365,15 +398,17 @@
     }
 
     function renderHome() {
-        const tiles = $("#tiles");
+        var tiles = $("#tiles");
         tiles.textContent = "";
 
         bookmarks.forEach(function (item) {
-            const link = make("a", "tile");
+            var link = make("a", "tile");
             link.href = toUrl(item.url);
-            const badge = make("span", "badge");
+            var badge = make("span", "badge");
             badge.setAttribute("aria-hidden", "true");
-            badge.appendChild(make("span", "badge-letter", Array.from(item.title)[0].toUpperCase()));
+            var firstCharacter = item.title.charAt(0);
+            if (/[\uD800-\uDBFF]/.test(firstCharacter)) firstCharacter += item.title.charAt(1);
+            badge.appendChild(make("span", "badge-letter", firstCharacter.toUpperCase()));
             addFavicon(badge, link.href);
             link.appendChild(badge);
             link.appendChild(make("span", "name", item.title));
@@ -381,7 +416,7 @@
         });
 
         if (bookmarks.length < MAX_BOOKMARKS) {
-            const add = make("button", "tile");
+            var add = make("button", "tile");
             add.type = "button";
             add.appendChild(make("span", "badge", "+"));
             add.appendChild(make("span", "name", "Add"));
@@ -393,10 +428,10 @@
     }
 
     function renderList() {
-        const list = $("#list");
+        var list = $("#list");
         list.textContent = "";
         bookmarks.forEach(function (item, index) {
-            const button = make("button");
+            var button = make("button");
             button.type = "button";
             button.appendChild(make("span", "name", item.title));
             button.appendChild(make("small", "", item.url.replace(/^https?:\/\/(www\.)?/, "")));
@@ -410,10 +445,10 @@
     }
 
     /* ---------- Editor ---------- */
-    const overlay = $("#overlay");
-    let editing = -1; // index being edited, -1 for a new bookmark
-    let fromHome = false; // opened with the "Add" tile
-    let confirmRemove = false;
+    var overlay = $("#overlay");
+    var editing = -1; // index being edited, -1 for a new bookmark
+    var fromHome = false; // opened with the "Add" tile
+    var confirmRemove = false;
 
     function showOverlay() {
         overlay.hidden = false;
@@ -433,7 +468,7 @@
         renderList();
         $("#editForm").hidden = true;
         $("#listView").hidden = false;
-        const items = $("#list").children;
+        var items = $("#list").children;
         (items[Math.min(focusIndex || 0, items.length - 1)] || $("#addButton")).focus();
     }
 
@@ -481,15 +516,15 @@
 
     $("#editForm").addEventListener("submit", function (event) {
         event.preventDefault();
-        const url = toUrl($("#bmUrl").value);
+        var url = toUrl($("#bmUrl").value);
         if (!url) {
             $("#editMessage").textContent = "Enter a web address such as example.com";
             return $("#bmUrl").focus();
         }
-        const title = $("#bmTitle").value.trim() || new URL(url).hostname.replace(/^www\./, "");
-        const index = editing < 0 ? bookmarks.length : editing;
+        var title = $("#bmTitle").value.trim() || parseUrl(url).hostname.replace(/^www\./, "");
+        var index = editing < 0 ? bookmarks.length : editing;
         bookmarks[index] = { title: title, url: url };
-        const stored = save();
+        var stored = save();
 
         if (fromHome && stored) {
             closeOverlay(function () {
@@ -513,11 +548,11 @@
     });
 
     /* ---------- Settings panel ---------- */
-    const settingsDialog = $("#settingsDialog");
-    const settingsFallback = $("#settingsFallback");
-    const nativeSettingsDialog =
+    var settingsDialog = $("#settingsDialog");
+    var settingsFallback = $("#settingsFallback");
+    var nativeSettingsDialog =
         typeof settingsDialog.showModal === "function" && typeof settingsDialog.close === "function";
-    const settingsViews = {
+    var settingsViews = {
         main: { view: "settingsMain", title: "settingsTitle" },
         appearance: {
             view: "appearanceView",
@@ -544,7 +579,7 @@
             back: "enginesBackButton",
         },
     };
-    let activeSettingsView = "main";
+    var activeSettingsView = "main";
 
     if (!nativeSettingsDialog) {
         settingsDialog.classList.add("fallback");
@@ -570,12 +605,12 @@
     }
 
     function showSettingsView(name) {
-        const previous = settingsViews[activeSettingsView];
+        var previous = settingsViews[activeSettingsView];
         activeSettingsView = name;
         Object.keys(settingsViews).forEach(function (key) {
             $("#" + settingsViews[key].view).hidden = key !== name;
         });
-        const view = settingsViews[name];
+        var view = settingsViews[name];
         settingsDialog.setAttribute("aria-labelledby", view.title);
         settingsDialog.scrollTop = 0;
         $("#" + (name === "main" ? previous.opener || "settingsCloseButton" : view.back)).focus();
@@ -597,7 +632,7 @@
 
     Object.keys(settingsViews).forEach(function (name) {
         if (name === "main") return;
-        const view = settingsViews[name];
+        var view = settingsViews[name];
         $("#" + view.opener).addEventListener("click", function () {
             if (name === "engines") $("#engineMessage").textContent = "";
             showSettingsView(name);
@@ -663,13 +698,13 @@
             }
             $("#engineMessage").textContent = "";
             if (this.checked) {
-                if (!settings.searchEngines.includes(this.value)) settings.searchEngines.push(this.value);
+                if (settings.searchEngines.indexOf(this.value) === -1) settings.searchEngines.push(this.value);
             } else {
                 settings.searchEngines = settings.searchEngines.filter(function (id) {
                     return id !== input.value;
                 });
             }
-            if (!settings.searchEngines.includes(settings.searchEngine)) {
+            if (settings.searchEngines.indexOf(settings.searchEngine) === -1) {
                 settings.searchEngine = settings.searchEngines[0];
             }
             saveSettings();
@@ -679,18 +714,34 @@
 
     $("#resetSettingsButton").addEventListener("click", resetSettings);
 
-    if (systemDark.addEventListener) {
-        systemDark.addEventListener("change", function () {
-            if (settings.darkMode === null) applySettings();
-        });
+    function systemThemeChanged() {
+        if (settings.darkMode === null) applySettings();
     }
 
+    if (systemDark.addEventListener) systemDark.addEventListener("change", systemThemeChanged);
+    else if (systemDark.addListener) systemDark.addListener(systemThemeChanged);
+
     /* ---------- Remote control navigation ---------- */
-    const ARROWS = { ArrowLeft: "left", ArrowUp: "up", ArrowRight: "right", ArrowDown: "down" };
-    const BACK_KEYS = new Set(["Escape", "Back", "GoBack", "BrowserBack", "XF86Back"]);
+    var ARROWS = { ArrowLeft: "left", ArrowUp: "up", ArrowRight: "right", ArrowDown: "down" };
+    var BACK_KEYS = ["Escape", "Back", "GoBack", "BrowserBack", "XF86Back"];
+    var KEY_CODES = {
+        8: "Backspace", 9: "Tab", 13: "Enter", 27: "Escape",
+        37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown", 461: "Back",
+    };
+
+    function eventKey(event) {
+        var key = event.key;
+        if (key === "Esc") return "Escape";
+        if (/^(Left|Up|Right|Down)$/.test(key)) return "Arrow" + key;
+        if (key && key !== "Unidentified") return key;
+        var keyCode = event.which || event.keyCode;
+        if (keyCode >= 48 && keyCode <= 57) return String(keyCode - 48);
+        if (keyCode >= 96 && keyCode <= 105) return String(keyCode - 96);
+        return KEY_CODES[keyCode] || "";
+    }
 
     function focusable() {
-        let scope = overlay.hidden ? $("#app") : overlay;
+        var scope = overlay.hidden ? $("#app") : overlay;
         if (settingsOpen()) scope = settingsDialog;
         return Array.prototype.filter.call(scope.querySelectorAll("a[href], button, input"), function (element) {
             return element.getClientRects().length > 0;
@@ -700,20 +751,20 @@
     // Left/Right stay on the same row. Up/Down go to the closest row,
     // then to the item in that row that lines up best.
     function findNext(current, direction) {
-        const from = current.getBoundingClientRect();
-        const vertical = direction === "up" || direction === "down";
-        const sign = direction === "down" || direction === "right" ? 1 : -1;
-        let best = null;
-        let bestScore = Infinity;
+        var from = current.getBoundingClientRect();
+        var vertical = direction === "up" || direction === "down";
+        var sign = direction === "down" || direction === "right" ? 1 : -1;
+        var best = null;
+        var bestScore = Infinity;
 
         focusable().forEach(function (element) {
             if (element === current) return;
-            const to = element.getBoundingClientRect();
-            let distance, score;
+            var to = element.getBoundingClientRect();
+            var distance, score;
             if (vertical) {
                 distance = sign > 0 ? to.top - from.bottom : from.top - to.bottom;
                 if (distance < -1) return;
-                const offset = Math.abs(to.left + to.right - (from.left + from.right)) / 2;
+                var offset = Math.abs(to.left + to.right - (from.left + from.right)) / 2;
                 score = Math.round(distance / 8) * 100000 + offset;
             } else {
                 if (to.bottom <= from.top || to.top >= from.bottom) return;
@@ -729,23 +780,23 @@
         return best;
     }
 
-    function handleBackKey(event, typing) {
+    function handleBackKey(event, typing, key) {
         if (settingsOpen()) {
-            if (!BACK_KEYS.has(event.key) && !(event.key === "Backspace" && !typing)) return false;
+            if (BACK_KEYS.indexOf(key) === -1 && !(key === "Backspace" && !typing)) return false;
             event.preventDefault();
             if (activeSettingsView !== "main") showSettingsView("main");
             else closeSettings();
             return true;
         }
         if (overlay.hidden) return false;
-        if (!BACK_KEYS.has(event.key) && !(event.key === "Backspace" && !typing)) return false;
+        if (BACK_KEYS.indexOf(key) === -1 && !(key === "Backspace" && !typing)) return false;
         event.preventDefault();
         goBack();
         return true;
     }
 
-    function handleNumberKey(event, typing) {
-        if (settingsOpen() || !overlay.hidden || typing || !/^\d$/.test(event.key)) return false;
+    function handleNumberKey(key, typing) {
+        if (settingsOpen() || !overlay.hidden || typing || !/^\d$/.test(key)) return false;
         code.focus();
         return true;
     }
@@ -755,7 +806,7 @@
         if (direction !== "left" && direction !== "right") return true;
 
         // In a text box, Left/Right move the cursor until it reaches an end
-        const edge = direction === "left" ? 0 : active.value.length;
+        var edge = direction === "left" ? 0 : active.value.length;
         return active.selectionStart === edge && active.selectionEnd === edge;
     }
 
@@ -766,33 +817,37 @@
 
     function focusNext(next) {
         next.focus();
-        if (next.scrollIntoView) next.scrollIntoView({ block: "nearest" });
+        if (next.scrollIntoView) {
+            if ("scrollBehavior" in document.documentElement.style) next.scrollIntoView({ block: "nearest" });
+            else next.scrollIntoView(false);
+        }
     }
 
     function handleArrowKey(event, active, typing, direction) {
         if (!direction) return;
         if (!textCursorCanMove(active, typing, direction)) return;
 
-        const items = focusable();
-        if (!items.includes(active)) {
+        var items = focusable();
+        if (items.indexOf(active) === -1) {
             focusFallback(event, items);
             return;
         }
 
         event.preventDefault();
-        const next = findNext(active, direction);
+        var next = findNext(active, direction);
         if (next) focusNext(next);
     }
 
     document.addEventListener("keydown", function (event) {
         if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
-        const active = document.activeElement;
-        const typing = active?.tagName === "INPUT" && (active.type === "text" || active.type === "search");
-        const direction = ARROWS[event.key];
+        var active = document.activeElement;
+        var typing = active && active.tagName === "INPUT" && (active.type === "text" || active.type === "search");
+        var key = eventKey(event);
+        var direction = ARROWS[key];
 
-        if (handleBackKey(event, typing)) return;
-        if (!nativeSettingsDialog && settingsOpen() && event.key === "Tab") {
-            const items = focusable();
+        if (handleBackKey(event, typing, key)) return;
+        if (!nativeSettingsDialog && settingsOpen() && key === "Tab") {
+            var items = focusable();
             if (event.shiftKey && active === items[0]) {
                 event.preventDefault();
                 items[items.length - 1].focus();
@@ -801,7 +856,7 @@
                 items[0].focus();
             }
         }
-        if (handleNumberKey(event, typing)) return;
+        if (handleNumberKey(key, typing)) return;
         handleArrowKey(event, active, typing, direction);
     });
 
