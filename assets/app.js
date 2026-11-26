@@ -123,6 +123,50 @@
         return element;
     }
 
+    function addFavicon(badge, url) {
+        var parsedUrl = new URL(url);
+        var sources = [
+            "https://www.google.com/s2/favicons?domain_url=" +
+                encodeURIComponent(parsedUrl.origin) +
+                "&sz=64&default=404",
+            "https://icons.duckduckgo.com/ip3/" + encodeURIComponent(parsedUrl.hostname) + ".ico",
+            new URL("/favicon.ico", parsedUrl.origin).href,
+            new URL("/favicon.svg", parsedUrl.origin).href,
+            new URL("/apple-touch-icon.png", parsedUrl.origin).href,
+        ];
+        // Providers block pixel inspection; size checks can also reject genuine icons.
+        var placeholderSizes = [16, 48];
+        var image = make("img", "favicon");
+        var sourceIndex = 0;
+        image.alt = "";
+        image.width = 64;
+        image.height = 64;
+        image.decoding = "async";
+        image.setAttribute("fetchpriority", "low");
+        image.addEventListener("load", function () {
+            var placeholderSize = placeholderSizes[sourceIndex - 1];
+            if (placeholderSize && image.naturalWidth === placeholderSize && image.naturalHeight === placeholderSize) {
+                tryNextSource();
+                return;
+            }
+            badge.classList.add("has-favicon");
+        });
+
+        function tryNextSource() {
+            badge.classList.remove("has-favicon");
+            if (sourceIndex < sources.length) image.src = sources[sourceIndex++];
+        }
+
+        image.addEventListener("error", tryNextSource);
+        badge.appendChild(image);
+
+        if (window.requestIdleCallback) {
+            window.requestIdleCallback(tryNextSource, { timeout: 2000 });
+        } else {
+            window.setTimeout(tryNextSource, 1000);
+        }
+    }
+
     function renderHome() {
         var tiles = $("tiles");
         tiles.textContent = "";
@@ -130,8 +174,10 @@
         bookmarks.forEach(function (item) {
             var link = make("a", "tile");
             link.href = toUrl(item.url);
-            var badge = make("span", "badge", Array.from(item.title)[0].toUpperCase());
+            var badge = make("span", "badge");
             badge.setAttribute("aria-hidden", "true");
+            badge.appendChild(make("span", "badge-letter", Array.from(item.title)[0].toUpperCase()));
+            addFavicon(badge, link.href);
             link.appendChild(badge);
             link.appendChild(make("span", "name", item.title));
             tiles.appendChild(link);

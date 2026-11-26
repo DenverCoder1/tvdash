@@ -254,8 +254,10 @@ button.tile {
 }
 
 .badge {
+    position: relative;
     display: grid;
     place-items: center;
+    overflow: hidden;
     width: 2.4rem;
     height: 2.4rem;
     border-radius: 0.6rem;
@@ -265,6 +267,30 @@ button.tile {
     font-size: 1.3rem;
     font-weight: 800;
     line-height: 1;
+}
+
+.badge-letter {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.badge img {
+    position: absolute;
+    inset: 0;
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.badge.has-favicon img {
+    display: block;
+}
+
+.badge.has-favicon .badge-letter {
+    visibility: hidden;
 }
 
 .name {
