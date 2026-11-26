@@ -84,7 +84,7 @@
         $("hour24").checked = Boolean(settings.hour24);
         var accentInput = document.querySelector('input[name="accent"][value="' + settings.accent + '"]');
         if (accentInput) accentInput.checked = true;
-        document.querySelectorAll('input[name="searchEngineEnabled"]').forEach(function (input) {
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="searchEngineEnabled"]'), function (input) {
             input.checked = settings.searchEngines.includes(input.value);
         });
         updateSearchEnginePicker();
@@ -446,6 +446,32 @@
 
     /* ---------- Settings panel ---------- */
     var settingsDialog = $("settingsDialog");
+    var settingsFallback = $("settingsFallback");
+    var nativeSettingsDialog = typeof settingsDialog.showModal === "function" &&
+        typeof settingsDialog.close === "function";
+
+    if (!nativeSettingsDialog) {
+        settingsDialog.classList.add("fallback");
+        settingsDialog.setAttribute("role", "dialog");
+        settingsDialog.setAttribute("aria-modal", "true");
+        settingsFallback.appendChild(settingsDialog);
+    }
+
+    function settingsOpen() {
+        return nativeSettingsDialog ? settingsDialog.open : !settingsFallback.hidden;
+    }
+
+    function closeSettings() {
+        if (nativeSettingsDialog) {
+            settingsDialog.close();
+        } else {
+            settingsFallback.hidden = true;
+            settingsDialog.hidden = true;
+            $("app").inert = false;
+            $("app").removeAttribute("aria-hidden");
+            $("settingsButton").focus();
+        }
+    }
 
     function showSettingsView(showEngines) {
         $("settingsMain").hidden = showEngines;
@@ -459,8 +485,15 @@
         $("settingsMain").hidden = false;
         $("enginesView").hidden = true;
         settingsDialog.setAttribute("aria-labelledby", "settingsTitle");
-        settingsDialog.showModal();
+        settingsDialog.hidden = false;
+        if (nativeSettingsDialog) {
+            settingsDialog.showModal();
+        } else {
+            settingsFallback.hidden = false;
+            $("app").inert = true;
+        }
         $("settingsCloseButton").focus();
+        if (!nativeSettingsDialog) $("app").setAttribute("aria-hidden", "true");
     });
 
     $("openEnginesButton").addEventListener("click", function () {
@@ -473,14 +506,18 @@
     });
 
     $("settingsCloseButton").addEventListener("click", function () {
-        settingsDialog.close();
+        closeSettings();
     });
 
     $("settingsDoneButton").addEventListener("click", function () {
-        settingsDialog.close();
+        closeSettings();
     });
 
-    document.querySelectorAll('input[name="accent"]').forEach(function (input) {
+    settingsFallback.addEventListener("click", function (event) {
+        if (event.target === settingsFallback) closeSettings();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="accent"]'), function (input) {
         input.addEventListener("change", function () {
             settings.accent = input.value;
             saveSettings();
@@ -500,7 +537,7 @@
         tick();
     });
 
-    document.querySelectorAll('input[name="searchEngineEnabled"]').forEach(function (input) {
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="searchEngineEnabled"]'), function (input) {
         input.addEventListener("change", function () {
             if (!this.checked && settings.searchEngines.length === 1) {
                 this.checked = true;
@@ -536,7 +573,7 @@
     var BACK_KEYS = new Set(["Escape", "Back", "GoBack", "BrowserBack", "XF86Back"]);
 
     function focusable() {
-        var scope = settingsDialog.open ? settingsDialog : (overlay.hidden ? $("app") : overlay);
+        var scope = settingsOpen() ? settingsDialog : (overlay.hidden ? $("app") : overlay);
         return Array.prototype.filter.call(scope.querySelectorAll("a[href], button, input"), function (element) {
             return element.getClientRects().length > 0;
         });
@@ -575,11 +612,11 @@
     }
 
     function handleBackKey(event, typing) {
-        if (settingsDialog.open) {
+        if (settingsOpen()) {
             if (!BACK_KEYS.has(event.key) && !(event.key === "Backspace" && !typing)) return false;
             event.preventDefault();
             if (!$("enginesView").hidden) showSettingsView(false);
-            else settingsDialog.close();
+            else closeSettings();
             return true;
         }
         if (overlay.hidden) return false;
@@ -590,7 +627,7 @@
     }
 
     function handleNumberKey(event, typing) {
-        if (settingsDialog.open || !overlay.hidden || typing || !/^\d$/.test(event.key)) return false;
+        if (settingsOpen() || !overlay.hidden || typing || !/^\d$/.test(event.key)) return false;
         code.focus();
         return true;
     }
@@ -606,7 +643,7 @@
 
     function focusFallback(event, items) {
         event.preventDefault();
-        if (items.length) (overlay.hidden ? code : items[0]).focus();
+        if (items.length) (settingsOpen() || !overlay.hidden ? items[0] : code).focus();
     }
 
     function focusNext(next) {
@@ -636,6 +673,16 @@
         var direction = ARROWS[event.key];
 
         if (handleBackKey(event, typing)) return;
+        if (!nativeSettingsDialog && settingsOpen() && event.key === "Tab") {
+            var items = focusable();
+            if (event.shiftKey && active === items[0]) {
+                event.preventDefault();
+                items[items.length - 1].focus();
+            } else if (!event.shiftKey && active === items[items.length - 1]) {
+                event.preventDefault();
+                items[0].focus();
+            }
+        }
         if (handleNumberKey(event, typing)) return;
         handleArrowKey(event, active, typing, direction);
     });
@@ -643,6 +690,9 @@
     // Keep focus inside the editor while it is open
     document.addEventListener("focusin", function (event) {
         if (!overlay.hidden && !overlay.contains(event.target)) focusable()[0].focus();
+        if (!nativeSettingsDialog && settingsOpen() && !settingsDialog.contains(event.target)) {
+            focusable()[0].focus();
+        }
     });
 
     /* ---------- Start (also runs after the Back button) ---------- */
