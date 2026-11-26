@@ -2,6 +2,8 @@
 
 TV browser home page supporting web search, AFTVnews Downloader codes, a clock, and customizable bookmarks.
 
+TVDash aims to reduce the need for extra apps and save space on your device. Instead of installing both a browser and the AFTVnews Downloader app, you can use a browser with TVDash to quickly open AFTVnews shortlinks. It also brings together most features of a standard browser start page, with plenty of options to customize it to your liking.
+
 <a href="https://tvdash.demolab.com"><img width="800" alt="image" src="https://github.com/user-attachments/assets/f7e915da-861b-4586-8999-ae17cc057ad0" /></a>
 
 ## Setup and Usage
@@ -25,6 +27,16 @@ You can customize TVDash using the Edit Bookmarks menu and the Settings menu acc
 - **Default focus**: Choose whether the search bar or Downloader code box receives focus when the page opens. The Downloader code box is selected by default.
 - **Date & Time**: Toggle the 24-hour clock and choose long day-first, long month-first, or year-first (YYYY-MM-DD) dates. Previews show today's date, and changes are saved in your browser.
 - **Search Engine**: Choose which search engines to enable for use in the search bar. If multiple are enabled, you can select the desired one from a dropdown menu in the search bar.
+
+#### Supported Search Engines
+
+- **Google** - Standard web search using Google.
+- **DuckDuckGo** - Privacy-focused search engine.
+- **Brave** - Privacy-focused search engine by the Brave browser.
+- **Qwant** - Privacy-focused search engine based in France.
+- **Bing** - Standard web search using Microsoft Bing.
+- **Startpage** - Privacy-focused search engine based in the Netherlands.
+- **Ecosia** - Search engine that plants trees with its ad revenue.
 
 ## Contributing
 
