@@ -464,6 +464,7 @@
     });
 
     $("openEnginesButton").addEventListener("click", function () {
+        $("engineMessage").textContent = "";
         showSettingsView(true);
     });
 
@@ -575,14 +576,14 @@
 
     function handleBackKey(event, typing) {
         if (settingsDialog.open) {
-            if (!BACK_KEYS.includes(event.key) && !(event.key === "Backspace" && !typing)) return false;
+            if (!BACK_KEYS.has(event.key) && !(event.key === "Backspace" && !typing)) return false;
             event.preventDefault();
             if (!$("enginesView").hidden) showSettingsView(false);
             else settingsDialog.close();
             return true;
         }
         if (overlay.hidden) return false;
-        if (!BACK_KEYS.includes(event.key) && !(event.key === "Backspace" && !typing)) return false;
+        if (!BACK_KEYS.has(event.key) && !(event.key === "Backspace" && !typing)) return false;
         event.preventDefault();
         goBack();
         return true;

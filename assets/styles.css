@@ -83,15 +83,33 @@ body {
 }
 
 header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: start;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
 }
 
 .header-actions {
-    display: grid;
-    grid-auto-flow: column;
-    grid-gap: 0.6rem;
+    display: flex;
+    flex-wrap: nowrap;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.header-actions button {
+    display: inline-block;
+    display: inline-flex;
+    flex: 0 0 auto;
+    grid-gap: 0;
+    vertical-align: top;
+}
+
+#editButton svg {
+    margin-right: 0.5rem;
+}
+
+#settingsButton {
+    margin-left: 0.6rem;
 }
 
 .icon-button {
