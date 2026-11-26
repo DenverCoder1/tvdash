@@ -9,7 +9,7 @@ if (process.argv.length > 3 || (process.argv.length === 3 && !check)) {
     throw new Error("Usage: node scripts/version-assets.js [--check]");
 }
 
-const root = path.join(__dirname, "../..");
+const root = path.join(__dirname, "..");
 const indexPath = path.join(root, "index.html");
 const original = fs.readFileSync(indexPath, "utf8");
 let updated = original;
