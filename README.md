@@ -1,6 +1,6 @@
 # TVDash
 
-TV browser home page supporting Google Search, AFTVnews Downloader, a clock, and customizable bookmarks.
+TV browser home page supporting web search, AFTVnews Downloader codes, a clock, and customizable bookmarks.
 
 <a href="https://tvdash.demolab.com"><img width="800" alt="image" src="https://github.com/user-attachments/assets/f7e915da-861b-4586-8999-ae17cc057ad0" /></a>
 
