@@ -135,7 +135,7 @@
     }
 
     function resetSettings() {
-        settings = { ...DEFAULT_SETTINGS, searchEngines: DEFAULT_SETTINGS.searchEngines.slice(),};
+        settings = { ...DEFAULT_SETTINGS, searchEngines: DEFAULT_SETTINGS.searchEngines.slice() };
         saveSettings();
         applySettings();
     }
