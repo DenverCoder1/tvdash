@@ -1,8 +1,10 @@
 # TVDash
 
-TV browser home page supporting web search, AFTVnews Downloader codes, a clock, and customizable bookmarks.
+TVDash is a customizable home page for TV browsers, bringing web search, bookmarks, a clock, and AFTVnews Downloader code entry together in one place.
 
-TVDash aims to reduce the need for extra apps and save space on your device. Instead of installing both a browser and the AFTVnews Downloader app, you can use a browser with TVDash to quickly open AFTVnews shortlinks. It also brings together most features of a standard browser start page, with plenty of options to customize it to your liking.
+Use your browser to open AFTVnews shortlinks with TVDash, so you don't need a separate Downloader app and can save space on your device. TVDash also includes the familiar features of a standard browser start page, with plenty of options to make it your own.
+
+**Open TVDash:** [tvdash.demolab.com](https://tvdash.demolab.com)
 
 <a href="https://tvdash.demolab.com"><img width="800" alt="image" src="https://github.com/user-attachments/assets/f7e915da-861b-4586-8999-ae17cc057ad0" /></a>
 
@@ -17,6 +19,12 @@ Open your browser settings and set your Home Page to **https://tvdash.demolab.co
 3. Set 'Home page' to 'Custom'
 4. In 'Custom home page URL' enter 'https://tvdash.demolab.com'
 5. Press enter to save and close the Settings menu
+
+### Older browsers
+
+TVDash uses ES5-compatible JavaScript for older stock Android browsers and embedded TV/projector browsers. Browsers without modern date formatting, the URL constructor, system theme detection, or native dialogs use built-in fallbacks; no external polyfill download is needed. Older remote controls that report numeric key codes are also supported.
+
+Browsers without CSS Grid use a simplified layout. Browsers without CSS custom properties use a fixed dark/orange palette instead of customizable colors. JavaScript must be enabled; if browser storage is blocked, changes cannot be saved between visits. Updating the browser or Android System WebView is still recommended where possible.
 
 ### Customization
 
@@ -42,4 +50,14 @@ You can customize TVDash using the Edit Bookmarks menu and the Settings menu acc
 
 Contributions are welcome. Please open an issue before starting work on large features so that they can be discussed before implementation.
 
-After changing `assets/app.js` or `assets/styles.css`, run `node .github/scripts/version-assets.js` and include the updated `index.html` in your changes. Pull requests check that the content hashes are current. On pushes to `main`, the workflow also updates and commits any stale hashes.
+After changing `assets/app.js` or `assets/styles.css`, run `node scripts/version-assets.js` and include the updated `index.html` in your changes. Pull requests check that the content hashes are current. On pushes to `main`, the workflow also updates and commits any stale hashes.
+
+To run compatibility checks, serve the repository (for example, `python3 -m http.server 8000`) and open `http://localhost:8000/tests/browser-compatibility.html` in a modern browser. The checks exercise the app with modern APIs available, legacy APIs only, partial internationalization support, and blocked storage. This simulates missing APIs, not an actual old browser engine; also test on target devices when available. Keep the scripts shipped to browsers, including the inline theme script, ES5-compatible.
+
+GitHub Actions runs ES5 syntax checks and the compatibility scenarios in headless Chromium on every push and pull request. Only one browser is installed to keep the check fast; external fonts and favicon requests are blocked during testing. To run the same checks locally with Node.js and Python 3 installed:
+
+```sh
+npm ci
+npx playwright install --with-deps --only-shell chromium
+npm test
+```

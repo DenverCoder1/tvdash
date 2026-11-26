@@ -6,7 +6,7 @@ const path = require("node:path");
 
 const check = process.argv[2] === "--check";
 if (process.argv.length > 3 || (process.argv.length === 3 && !check)) {
-    throw new Error("Usage: node .github/scripts/version-assets.js [--check]");
+    throw new Error("Usage: node scripts/version-assets.js [--check]");
 }
 
 const root = path.join(__dirname, "../..");
@@ -26,7 +26,7 @@ for (const asset of ["assets/styles.css", "assets/app.js"]) {
 
 if (updated !== original) {
     if (check) {
-        console.error("Asset versions are out of date. Run node .github/scripts/version-assets.js.");
+        console.error("Asset versions are out of date. Run node scripts/version-assets.js.");
         process.exitCode = 1;
     } else {
         fs.writeFileSync(indexPath, updated);

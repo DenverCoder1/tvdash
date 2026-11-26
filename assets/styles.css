@@ -783,6 +783,230 @@ label {
     color: var(--gray-mid);
 }
 
+/* Stock Android browsers may support neither Grid nor custom properties.
+   Classes are set before styles load; modern browsers keep the normal layout. */
+.legacy-layout .app,
+.legacy-layout main,
+.legacy-layout .overlay,
+.legacy-layout .list,
+.legacy-layout .color-options,
+.legacy-layout .engine-options,
+.legacy-layout .date-format-options {
+    display: block;
+}
+
+.legacy-layout main {
+    padding-top: 2rem;
+}
+
+.legacy-layout main > * {
+    margin-bottom: 1.2rem;
+}
+
+.legacy-layout button {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.legacy-layout .search,
+.legacy-layout .code-card {
+    display: block;
+    position: relative;
+    width: 100%;
+}
+
+.legacy-layout .search {
+    padding-right: 9.9rem;
+}
+
+.legacy-layout .field {
+    display: block;
+}
+
+.legacy-layout .search-engine-picker {
+    float: left;
+}
+
+.legacy-layout .search.has-engine-picker .field {
+    margin-left: 4.5rem;
+}
+
+.legacy-layout .code-card {
+    padding-left: 16.1rem;
+    padding-right: 11.1rem;
+}
+
+.legacy-layout .code-card > div {
+    position: absolute;
+    top: 1.4rem;
+    left: 1.2rem;
+    width: 14rem;
+}
+
+.legacy-layout .search > button,
+.legacy-layout .code-card > button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 9rem;
+}
+
+.legacy-layout .code-card > button {
+    top: 1.1rem;
+    right: 1.2rem;
+}
+
+.legacy-layout .tiles {
+    display: block;
+}
+
+.legacy-layout .tile {
+    display: inline-block;
+    width: 16%;
+    margin: 0 0.6% 0.9rem 0;
+    vertical-align: top;
+}
+
+.legacy-layout .badge,
+.legacy-layout .badge-letter {
+    display: block;
+    line-height: 2.4rem;
+}
+
+.legacy-layout .badge {
+    margin: 0 auto 0.25rem;
+}
+
+.legacy-layout .tile .name,
+.legacy-layout .list .name,
+.legacy-layout .list small {
+    display: block;
+}
+
+.legacy-layout .badge img {
+    top: 0;
+    left: 0;
+}
+
+.legacy-layout .dialog,
+.legacy-layout .settings-dialog.fallback {
+    margin: 1rem auto;
+}
+
+.legacy-layout .list button {
+    width: 100%;
+    margin-bottom: 0.6rem;
+    text-align: left;
+}
+
+.legacy-layout .actions,
+.legacy-layout .settings-actions {
+    display: block;
+    text-align: right;
+}
+
+.legacy-layout .actions button,
+.legacy-layout .settings-actions button {
+    margin: 0.3rem;
+}
+
+.legacy-layout .settings-heading,
+.legacy-layout .setting-row {
+    display: table;
+    width: 100%;
+}
+
+.legacy-layout .settings-heading h1,
+.legacy-layout .setting-row > div {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.legacy-layout .setting-row .switch {
+    display: block;
+    margin: 1.2rem 0 1.2rem auto;
+}
+
+.legacy-layout .color-option {
+    display: inline-block;
+    padding: 0.55rem;
+    margin-right: 0.6rem;
+}
+
+.legacy-layout .color-option > span[aria-hidden] {
+    display: block;
+}
+
+.legacy-layout .setting-link {
+    display: block;
+}
+
+.legacy-layout .setting-link .icon {
+    float: right;
+}
+
+.legacy-layout .engine-options label,
+.legacy-layout .date-format-options label {
+    display: block;
+    min-height: 3.4rem;
+    padding: 0.6rem 0;
+}
+
+.legacy-layout .date-format-options label > span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.legacy-layout .switch input:focus + span {
+    outline: 0.2rem solid #f5f5f7;
+    outline-offset: 0.15rem;
+}
+
+.legacy-colors body {
+    background: #0e0e10;
+    color: #f5f5f7;
+    font-family: "Roboto Condensed", sans-serif;
+}
+
+.legacy-colors input,
+.legacy-colors button,
+.legacy-colors .tile,
+.legacy-colors .code-card,
+.legacy-colors .dialog,
+.legacy-colors .settings-dialog {
+    background: #18181c;
+    border-color: #2a2a30;
+    color: #f5f5f7;
+}
+
+.legacy-colors button.primary,
+.legacy-colors .switch input:checked + span,
+.legacy-colors .switch input:checked + span::after {
+    background: #f5820a;
+    color: #000;
+}
+
+.legacy-colors .badge {
+    background: rgba(245, 130, 10, 0.18);
+    color: #ff9b30;
+}
+
+.legacy-colors .switch > span {
+    background: #1e1e24;
+    border-color: #9ea3b0;
+}
+
+.legacy-colors .switch > span::after {
+    background: #9ea3b0;
+}
+
+.legacy-colors input:focus,
+.legacy-colors button:focus,
+.legacy-colors .tile:focus {
+    outline: 0.2rem solid #f5f5f7;
+    border-color: #f5820a;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .settings-dialog[open] {
         animation: none;
@@ -818,5 +1042,36 @@ label {
     }
     .list {
         grid-template-columns: minmax(0, 1fr);
+    }
+    .legacy-layout .search,
+    .legacy-layout .code-card,
+    .legacy-layout .field,
+    .legacy-layout .code-card > div {
+        display: block;
+        width: 100%;
+        position: static;
+    }
+    .legacy-layout .search {
+        padding-right: 0;
+    }
+    .legacy-layout .code-card {
+        padding: 1.1rem 1.2rem;
+    }
+    .legacy-layout .search > button,
+    .legacy-layout .code-card > button {
+        position: static;
+    }
+    .legacy-layout .search-engine-picker {
+        float: none;
+    }
+    .legacy-layout .search.has-engine-picker .field {
+        margin-left: 0;
+    }
+    .legacy-layout .search > *,
+    .legacy-layout .code-card > * {
+        margin-bottom: 0.6rem;
+    }
+    .legacy-layout .tile {
+        width: 32%;
     }
 }

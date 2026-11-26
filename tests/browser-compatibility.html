@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<title>TVDash browser compatibility tests</title>
+<h1>Browser compatibility tests</h1>
+<pre id="results">Running...</pre>
+<iframe title="Test application" width="1280" height="720"></iframe>
+<script>
+    (async function () {
+        "use strict";
+
+        const output = document.querySelector("#results");
+        const frame = document.querySelector("iframe");
+        const keys = ["tvHome.settings", "tvHome.bookmarks"];
+        const original = keys.map(key => localStorage.getItem(key));
+        const results = [];
+
+        function assert(condition, message) {
+            if (!condition) throw new Error(message);
+        }
+
+        function bootstrap(mode) {
+            const NativeDate = Date;
+            window.Date = function () { return new NativeDate(2026, 0, 2, 14, 5, 0); };
+            window.Date.prototype = NativeDate.prototype;
+            window.testErrors = [];
+            window.addEventListener("error", event => window.testErrors.push(event.message));
+            if (mode === "legacy" || mode === "blocked-storage") {
+                window.Intl = undefined;
+                window.URL = {};
+                window.Set = undefined;
+                window.matchMedia = undefined;
+                window.CSS = undefined;
+                Object.hasOwn = undefined;
+                Array.from = undefined;
+                Array.prototype.includes = undefined;
+                Array.prototype.find = undefined;
+                String.raw = undefined;
+                HTMLDialogElement.prototype.showModal = undefined;
+                HTMLDialogElement.prototype.close = undefined;
+            } else if (mode === "partial-intl") {
+                Intl.DateTimeFormat.prototype.formatToParts = undefined;
+                window.matchMedia = function () {
+                    return {
+                        matches: true,
+                        addListener: function (listener) { window.testThemeListener = listener; },
+                    };
+                };
+            }
+            if (mode === "blocked-storage") {
+                Object.defineProperty(window, "localStorage", {
+                    get: function () { throw new Error("Storage blocked for test"); },
+                });
+            }
+        }
+
+        try {
+            const response = await fetch("../index.html");
+            assert(response.ok, "Could not load index.html");
+            const html = await response.text();
+            for (const mode of ["modern", "legacy", "partial-intl", "blocked-storage"]) {
+                localStorage.setItem(keys[0], JSON.stringify({
+                    hour24: true,
+                    dateFormat: "long-month-first",
+                    defaultFocus: "search",
+                    searchEngines: ["google", "bing"],
+                    searchEngine: "bing",
+                }));
+                localStorage.removeItem(keys[1]);
+                const loaded = new Promise(resolve => { frame.onload = resolve; });
+                frame.srcdoc = html.replace("<head>", '<head><base href="' +
+                    new URL("../", location.href).href + '"><script>(' +
+                    bootstrap.toString() + ')(' + JSON.stringify(mode) + ');<\/script>');
+                await loaded;
+                const win = frame.contentWindow;
+                const doc = win.document;
+                const $ = id => doc.getElementById(id);
+                const blocked = mode === "blocked-storage";
+                const legacy = mode === "legacy" || blocked;
+                const change = element => element.dispatchEvent(new win.Event("change", { bubbles: true }));
+                const submit = element => element.dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
+                const key = (name, code) => doc.dispatchEvent(new win.KeyboardEvent("keydown", {
+                    key: legacy ? "" : name, keyCode: code, which: code, bubbles: true, cancelable: true,
+                }));
+
+                assert($("time").textContent !== "--:--", mode + ": clock did not start");
+                assert($("date").textContent === (blocked ? "Friday, 2 January" : "Friday, January 2"),
+                    mode + ": date format or saved settings lost");
+                assert($("datePreviewYearFirst").textContent === "2026-01-02", mode + ": year-first date");
+                assert(doc.querySelectorAll("#tiles a").length === 4, mode + ": missing default bookmarks");
+                assert(doc.activeElement === $(blocked ? "code" : "query"), mode + ": default focus");
+                if (legacy) {
+                    assert(doc.documentElement.classList.contains("legacy-layout"), mode + ": layout fallback");
+                    assert(doc.documentElement.classList.contains("legacy-colors"), mode + ": color fallback");
+                    assert(/02:05 PM|14:05/.test($("time").textContent), mode + ": fallback time");
+                    const tiles = doc.querySelectorAll("#tiles .tile");
+                    assert(tiles[1].getBoundingClientRect().left > tiles[0].getBoundingClientRect().left,
+                        mode + ": bookmark tiles overlap");
+                }
+                if (mode === "partial-intl") assert(typeof win.testThemeListener === "function", "Legacy theme listener");
+
+                for (const [value, expected] of [
+                    ["example.com/path?q=1", "Open site"], ["localhost:8080", "Open site"],
+                    ["192.168.1.1", "Open site"], ["https://[::1]:8080", "Open site"],
+                    ["https://[", "Search"], ["javascript:alert(1)", "Search"], ["hello world", "Search"],
+                ]) {
+                    $("query").value = value;
+                    $("query").dispatchEvent(new win.Event("input"));
+                    assert($("searchButton").textContent === expected, mode + ": URL detection: " + value);
+                }
+                $("code").value = "12a34567890123";
+                $("code").dispatchEvent(new win.Event("input"));
+                assert($("code").value === "1234567890", mode + ": code sanitization");
+                $("code").focus();
+                key("ArrowDown", 40);
+                assert(doc.activeElement.classList.contains("tile"), mode + ": remote arrow navigation landed on " +
+                    doc.activeElement.id);
+
+                doc.querySelector("#tiles button").click();
+                $("bmTitle").value = "\uD83C\uDFAC Test";
+                $("bmUrl").value = "example.com/path";
+                submit($("editForm"));
+                if (blocked) {
+                    assert($("listMessage").textContent.indexOf("blocked saving") !== -1, "Bookmark storage error");
+                    $("doneButton").click();
+                }
+                const bookmark = doc.querySelector("#tiles a:last-of-type");
+                assert(bookmark.href === "https://example.com/path", mode + ": bookmark URL normalization");
+                assert(bookmark.querySelector(".badge-letter").textContent === "\uD83C\uDFAC", mode + ": Unicode badge");
+                if (!blocked) {
+                    win.dispatchEvent(new win.Event("pageshow"));
+                    assert(doc.querySelectorAll("#tiles a").length === 5, mode + ": reload saved bookmarks");
+                }
+
+                $("settingsButton").click();
+                assert(legacy ? !$("settingsFallback").hidden : $("settingsDialog").open, mode + ": open settings");
+                $("openDateTimeButton").click();
+                assert(!$("dateTimeView").hidden, mode + ": settings navigation");
+                $("hour24").checked = false;
+                change($("hour24"));
+                if (legacy) assert($("time").textContent === "02:05 PM", mode + ": 12-hour clock");
+                $("hour24").checked = true;
+                change($("hour24"));
+                if (legacy) assert($("time").textContent === "14:05", mode + ": 24-hour clock");
+                if (blocked) assert($("settingsMessage").textContent.indexOf("blocked saving") !== -1, "Settings storage error");
+                key("Escape", 27);
+                assert(!$("settingsMain").hidden, mode + ": remote back to settings");
+                key("Escape", 27);
+                assert(legacy ? $("settingsFallback").hidden : !$("settingsDialog").open, mode + ": remote close settings");
+                assert(win.testErrors.length === 0, mode + ": " + win.testErrors.join(", "));
+                results.push("PASS " + mode);
+                output.textContent = results.join("\n");
+            }
+            output.dataset.status = "passed";
+        } catch (error) {
+            output.textContent = results.concat("FAIL " + error.stack).join("\n");
+            output.dataset.status = "failed";
+            console.error(error);
+        } finally {
+            frame.remove();
+            keys.forEach((key, index) => {
+                if (original[index] === null) localStorage.removeItem(key);
+                else localStorage.setItem(key, original[index]);
+            });
+        }
+    })();
+</script>
+
+</html>
