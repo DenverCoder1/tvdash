@@ -669,7 +669,9 @@ label {
     height: 1.5rem;
     border-radius: 50%;
     background: var(--gray-mid);
-    transition: transform 120ms ease, background 120ms ease;
+    transition:
+        transform 120ms ease,
+        background 120ms ease;
 }
 
 .switch input:checked + span {

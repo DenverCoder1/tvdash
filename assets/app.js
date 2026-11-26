@@ -47,8 +47,8 @@
         "year-first": { preview: "datePreviewYearFirst" },
     };
 
-    function $(id) {
-        return document.getElementById(id);
+    function $(query) {
+        return document.querySelector(query);
     }
 
     /* ---------- Settings ---------- */
@@ -88,9 +88,9 @@
     function saveSettings() {
         try {
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-            $("settingsMessage").textContent = "";
+            $("#settingsMessage").textContent = "";
         } catch (error) {
-            $("settingsMessage").textContent =
+            $("#settingsMessage").textContent =
                 "This browser blocked saving. Changes will be lost when the page reloads.";
         }
     }
@@ -99,7 +99,7 @@
     let settings = loadSettings();
 
     function focusDefaultInput() {
-        (settings.defaultFocus === "search" ? $("query") : $("code")).focus();
+        (settings.defaultFocus === "search" ? $("#query") : $("#code")).focus();
     }
 
     function resolvedDarkMode() {
@@ -115,10 +115,10 @@
         document.querySelector('meta[name="color-scheme"]').content = colorScheme;
         document.querySelector('meta[name="theme-color"]').content = dark ? "#0E0E10" : "#F2F2F5";
 
-        $("darkMode").checked = dark;
-        $("darkModeDescription").textContent =
+        $("#darkMode").checked = dark;
+        $("#darkModeDescription").textContent =
             settings.darkMode === null ? "Following system: " + modeName : "Manually set to " + modeName;
-        $("hour24").checked = Boolean(settings.hour24);
+        $("#hour24").checked = Boolean(settings.hour24);
         Array.prototype.forEach.call(document.querySelectorAll('input[name="dateFormat"]'), function (input) {
             input.checked = input.value === settings.dateFormat;
         });
@@ -135,7 +135,7 @@
     }
 
     function resetSettings() {
-        settings = { ...DEFAULT_SETTINGS, searchEngines: DEFAULT_SETTINGS.searchEngines.slice(),};
+        settings = { ...DEFAULT_SETTINGS, searchEngines: DEFAULT_SETTINGS.searchEngines.slice() };
         saveSettings();
         applySettings();
     }
@@ -167,10 +167,10 @@
             hour12: !settings.hour24,
         });
         const date = formatDate(now, settings.dateFormat);
-        if ($("time").textContent !== time) $("time").textContent = time;
-        if ($("date").textContent !== date) $("date").textContent = date;
+        if ($("#time").textContent !== time) $("#time").textContent = time;
+        if ($("#date").textContent !== date) $("#date").textContent = date;
         Object.keys(DATE_FORMATS).forEach(function (format) {
-            const preview = $(DATE_FORMATS[format].preview);
+            const preview = $("#" + DATE_FORMATS[format].preview);
             const text = formatDate(now, format);
             if (preview.textContent !== text) preview.textContent = text;
         });
@@ -204,15 +204,15 @@
     }
 
     /* ---------- Search bar ---------- */
-    const query = $("query");
+    const query = $("#query");
 
     function updateSearchEnginePicker() {
         const enabled = settings.searchEngines.filter(function (id) {
             return SEARCH_ENGINES[id];
         });
-        const picker = $("searchEnginePicker");
-        const select = $("searchEngine");
-        const search = $("searchForm");
+        const picker = $("#searchEnginePicker");
+        const select = $("#searchEngine");
+        const search = $("#searchForm");
 
         select.textContent = "";
         enabled.forEach(function (id) {
@@ -224,8 +224,8 @@
 
         if (!enabled.includes(settings.searchEngine)) settings.searchEngine = enabled[0] || "google";
         select.value = settings.searchEngine;
-        $("searchEngineIcon").src = "assets/search-icons/" + SEARCH_ENGINES[settings.searchEngine].icon;
-        $("searchEngineIcon").alt = "";
+        $("#searchEngineIcon").src = "assets/search-icons/" + SEARCH_ENGINES[settings.searchEngine].icon;
+        $("#searchEngineIcon").alt = "";
 
         const multiple = enabled.length > 1;
         picker.hidden = !multiple;
@@ -235,17 +235,17 @@
         query.setAttribute("aria-label", "Search " + name + " or type a web address");
     }
 
-    $("searchEngine").addEventListener("change", function () {
+    $("#searchEngine").addEventListener("change", function () {
         settings.searchEngine = this.value;
         saveSettings();
         updateSearchEnginePicker();
     });
 
     query.addEventListener("input", function () {
-        $("searchButton").textContent = toUrl(query.value) ? "Open site" : "Search";
+        $("#searchButton").textContent = toUrl(query.value) ? "Open site" : "Search";
     });
 
-    $("searchForm").addEventListener("submit", function (event) {
+    $("#searchForm").addEventListener("submit", function (event) {
         event.preventDefault();
         const text = query.value.trim();
         if (!text) return query.focus();
@@ -259,20 +259,20 @@
     });
 
     /* ---------- Code entry ---------- */
-    const code = $("code");
+    const code = $("#code");
 
     function updateCode() {
         code.value = code.value.replace(/\D/g, "").slice(0, MAX_DIGITS);
-        $("preview").textContent = "aftv.news/" + (code.value || "…");
+        $("#preview").textContent = "aftv.news/" + (code.value || "…");
     }
 
     code.addEventListener("input", updateCode);
 
-    $("codeForm").addEventListener("submit", function (event) {
+    $("#codeForm").addEventListener("submit", function (event) {
         event.preventDefault();
         updateCode();
         if (!code.value) return code.focus();
-        $("goButton").textContent = "Opening…";
+        $("#goButton").textContent = "Opening…";
         window.location.href = "https://aftv.news/" + code.value;
     });
 
@@ -298,10 +298,10 @@
     function save() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
-            $("listMessage").textContent = "";
+            $("#listMessage").textContent = "";
             return true;
         } catch (error) {
-            $("listMessage").textContent = "This browser blocked saving. Changes will be lost when the page reloads.";
+            $("#listMessage").textContent = "This browser blocked saving. Changes will be lost when the page reloads.";
             return false;
         }
     }
@@ -361,7 +361,7 @@
     }
 
     function renderHome() {
-        const tiles = $("tiles");
+        const tiles = $("#tiles");
         tiles.textContent = "";
 
         bookmarks.forEach(function (item) {
@@ -389,7 +389,7 @@
     }
 
     function renderList() {
-        const list = $("list");
+        const list = $("#list");
         list.textContent = "";
         bookmarks.forEach(function (item, index) {
             const button = make("button");
@@ -401,36 +401,36 @@
             });
             list.appendChild(button);
         });
-        $("listTitle").textContent = "Edit bookmarks (" + bookmarks.length + " of " + MAX_BOOKMARKS + ")";
-        $("addButton").hidden = bookmarks.length >= MAX_BOOKMARKS;
+        $("#listTitle").textContent = "Edit bookmarks (" + bookmarks.length + " of " + MAX_BOOKMARKS + ")";
+        $("#addButton").hidden = bookmarks.length >= MAX_BOOKMARKS;
     }
 
     /* ---------- Editor ---------- */
-    const overlay = $("overlay");
+    const overlay = $("#overlay");
     let editing = -1; // index being edited, -1 for a new bookmark
     let fromHome = false; // opened with the "Add" tile
     let confirmRemove = false;
 
     function showOverlay() {
         overlay.hidden = false;
-        $("app").inert = true;
+        $("#app").inert = true;
     }
 
     function closeOverlay(target) {
         overlay.hidden = true;
-        $("app").inert = false;
+        $("#app").inert = false;
         applySettings();
         renderHome();
-        (target ? target() : $("editButton")).focus();
+        (target ? target() : $("#editButton")).focus();
     }
 
     function showList(focusIndex) {
         showOverlay();
         renderList();
-        $("editForm").hidden = true;
-        $("listView").hidden = false;
-        const items = $("list").children;
-        (items[Math.min(focusIndex || 0, items.length - 1)] || $("addButton")).focus();
+        $("#editForm").hidden = true;
+        $("#listView").hidden = false;
+        const items = $("#list").children;
+        (items[Math.min(focusIndex || 0, items.length - 1)] || $("#addButton")).focus();
     }
 
     function openEditor(index, openedFromHome) {
@@ -438,21 +438,21 @@
         fromHome = openedFromHome;
         confirmRemove = false;
         showOverlay();
-        $("listView").hidden = true;
-        $("editForm").hidden = false;
-        $("editTitle").textContent = index < 0 ? "Add bookmark" : "Edit bookmark";
-        $("bmTitle").value = index < 0 ? "" : bookmarks[index].title;
-        $("bmUrl").value = index < 0 ? "" : bookmarks[index].url;
-        $("editMessage").textContent = "";
-        $("removeButton").hidden = index < 0;
-        $("removeButton").textContent = "Remove";
-        $("bmTitle").focus();
+        $("#listView").hidden = true;
+        $("#editForm").hidden = false;
+        $("#editTitle").textContent = index < 0 ? "Add bookmark" : "Edit bookmark";
+        $("#bmTitle").value = index < 0 ? "" : bookmarks[index].title;
+        $("#bmUrl").value = index < 0 ? "" : bookmarks[index].url;
+        $("#editMessage").textContent = "";
+        $("#removeButton").hidden = index < 0;
+        $("#removeButton").textContent = "Remove";
+        $("#bmTitle").focus();
     }
 
     function leaveEditor() {
         if (fromHome) {
             closeOverlay(function () {
-                return $("tiles").lastElementChild;
+                return $("#tiles").lastElementChild;
             });
         } else {
             showList(editing < 0 ? bookmarks.length : editing);
@@ -460,43 +460,43 @@
     }
 
     function goBack() {
-        if ($("editForm").hidden) closeOverlay();
+        if ($("#editForm").hidden) closeOverlay();
         else leaveEditor();
     }
 
-    $("editButton").addEventListener("click", function () {
+    $("#editButton").addEventListener("click", function () {
         showList(0);
     });
-    $("addButton").addEventListener("click", function () {
+    $("#addButton").addEventListener("click", function () {
         openEditor(-1, false);
     });
-    $("doneButton").addEventListener("click", function () {
+    $("#doneButton").addEventListener("click", function () {
         closeOverlay();
     });
-    $("cancelButton").addEventListener("click", leaveEditor);
+    $("#cancelButton").addEventListener("click", leaveEditor);
 
-    $("editForm").addEventListener("submit", function (event) {
+    $("#editForm").addEventListener("submit", function (event) {
         event.preventDefault();
-        const url = toUrl($("bmUrl").value);
+        const url = toUrl($("#bmUrl").value);
         if (!url) {
-            $("editMessage").textContent = "Enter a web address such as example.com";
-            return $("bmUrl").focus();
+            $("#editMessage").textContent = "Enter a web address such as example.com";
+            return $("#bmUrl").focus();
         }
-        const title = $("bmTitle").value.trim() || new URL(url).hostname.replace(/^www\./, "");
+        const title = $("#bmTitle").value.trim() || new URL(url).hostname.replace(/^www\./, "");
         const index = editing < 0 ? bookmarks.length : editing;
         bookmarks[index] = { title: title, url: url };
         const stored = save();
 
         if (fromHome && stored) {
             closeOverlay(function () {
-                return $("tiles").children[index];
+                return $("#tiles").children[index];
             });
         } else {
             showList(index);
         }
     });
 
-    $("removeButton").addEventListener("click", function () {
+    $("#removeButton").addEventListener("click", function () {
         // Ask for a second press, so one accidental click removes nothing
         if (!confirmRemove) {
             confirmRemove = true;
@@ -509,8 +509,8 @@
     });
 
     /* ---------- Settings panel ---------- */
-    const settingsDialog = $("settingsDialog");
-    const settingsFallback = $("settingsFallback");
+    const settingsDialog = $("#settingsDialog");
+    const settingsFallback = $("#settingsFallback");
     const nativeSettingsDialog =
         typeof settingsDialog.showModal === "function" && typeof settingsDialog.close === "function";
     const settingsViews = {
@@ -559,9 +559,9 @@
         } else {
             settingsFallback.hidden = true;
             settingsDialog.hidden = true;
-            $("app").inert = false;
-            $("app").removeAttribute("aria-hidden");
-            $("settingsButton").focus();
+            $("#app").inert = false;
+            $("#app").removeAttribute("aria-hidden");
+            $("#settingsButton").focus();
         }
     }
 
@@ -569,15 +569,15 @@
         const previous = settingsViews[activeSettingsView];
         activeSettingsView = name;
         Object.keys(settingsViews).forEach(function (key) {
-            $(settingsViews[key].view).hidden = key !== name;
+            $("#" + settingsViews[key].view).hidden = key !== name;
         });
         const view = settingsViews[name];
         settingsDialog.setAttribute("aria-labelledby", view.title);
         settingsDialog.scrollTop = 0;
-        $(name === "main" ? previous.opener || "settingsCloseButton" : view.back).focus();
+        $("#" + (name === "main" ? previous.opener || "settingsCloseButton" : view.back)).focus();
     }
 
-    $("settingsButton").addEventListener("click", function () {
+    $("#settingsButton").addEventListener("click", function () {
         applySettings();
         showSettingsView("main");
         settingsDialog.hidden = false;
@@ -585,29 +585,29 @@
             settingsDialog.showModal();
         } else {
             settingsFallback.hidden = false;
-            $("app").inert = true;
+            $("#app").inert = true;
         }
-        $("settingsCloseButton").focus();
-        if (!nativeSettingsDialog) $("app").setAttribute("aria-hidden", "true");
+        $("#settingsCloseButton").focus();
+        if (!nativeSettingsDialog) $("#app").setAttribute("aria-hidden", "true");
     });
 
     Object.keys(settingsViews).forEach(function (name) {
         if (name === "main") return;
         const view = settingsViews[name];
-        $(view.opener).addEventListener("click", function () {
-            if (name === "engines") $("engineMessage").textContent = "";
+        $("#" + view.opener).addEventListener("click", function () {
+            if (name === "engines") $("#engineMessage").textContent = "";
             showSettingsView(name);
         });
-        $(view.back).addEventListener("click", function () {
+        $("#" + view.back).addEventListener("click", function () {
             showSettingsView("main");
         });
     });
 
-    $("settingsCloseButton").addEventListener("click", function () {
+    $("#settingsCloseButton").addEventListener("click", function () {
         closeSettings();
     });
 
-    $("settingsDoneButton").addEventListener("click", function () {
+    $("#settingsDoneButton").addEventListener("click", function () {
         closeSettings();
     });
 
@@ -623,13 +623,13 @@
         });
     });
 
-    $("darkMode").addEventListener("change", function () {
+    $("#darkMode").addEventListener("change", function () {
         settings.darkMode = this.checked;
         saveSettings();
         applySettings();
     });
 
-    $("hour24").addEventListener("change", function () {
+    $("#hour24").addEventListener("change", function () {
         settings.hour24 = this.checked;
         saveSettings();
         tick();
@@ -654,10 +654,10 @@
         input.addEventListener("change", function () {
             if (!this.checked && settings.searchEngines.length === 1) {
                 this.checked = true;
-                $("engineMessage").textContent = "Keep at least one search engine enabled.";
+                $("#engineMessage").textContent = "Keep at least one search engine enabled.";
                 return;
             }
-            $("engineMessage").textContent = "";
+            $("#engineMessage").textContent = "";
             if (this.checked) {
                 if (!settings.searchEngines.includes(this.value)) settings.searchEngines.push(this.value);
             } else {
@@ -673,7 +673,7 @@
         });
     });
 
-    $("resetSettingsButton").addEventListener("click", resetSettings);
+    $("#resetSettingsButton").addEventListener("click", resetSettings);
 
     if (systemDark.addEventListener) {
         systemDark.addEventListener("change", function () {
@@ -686,7 +686,7 @@
     const BACK_KEYS = new Set(["Escape", "Back", "GoBack", "BrowserBack", "XF86Back"]);
 
     function focusable() {
-        let scope = overlay.hidden ? $("app") : overlay;
+        let scope = overlay.hidden ? $("#app") : overlay;
         if (settingsOpen()) scope = settingsDialog;
         return Array.prototype.filter.call(scope.querySelectorAll("a[href], button, input"), function (element) {
             return element.getClientRects().length > 0;
@@ -811,7 +811,7 @@
 
     /* ---------- Start (also runs after the Back button) ---------- */
     window.addEventListener("pageshow", function () {
-        $("goButton").textContent = "Go";
+        $("#goButton").textContent = "Go";
         bookmarks = load();
         updateCode();
         if (overlay.hidden) {
