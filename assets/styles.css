@@ -543,6 +543,11 @@ label {
     font-weight: 700;
 }
 
+#dateTimeView .setting-group {
+    margin-top: 0.8rem;
+    padding-top: 0;
+}
+
 .color-options {
     display: grid;
     grid-template-columns: repeat(4, 3.6rem);
@@ -645,11 +650,11 @@ label {
 
 .switch > span {
     position: absolute;
+    inset: 0;
     top: 0;
     right: 0;
     bottom: 0;
     left: 0;
-    inset: 0;
     border-radius: 999px;
     background: var(--dark-card-hover);
     border: 0.15rem solid var(--dark-border);
@@ -747,6 +752,33 @@ label {
     margin: 0;
     padding: 0;
     accent-color: var(--orange);
+}
+
+.date-format-options {
+    display: grid;
+}
+
+.date-format-options label {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    align-items: center;
+    grid-gap: 0.8rem;
+    min-height: max(3.4rem, 48px);
+    margin: 0;
+    color: var(--white);
+    cursor: pointer;
+}
+
+.date-format-options input {
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    accent-color: var(--orange);
+}
+
+.date-format-options small {
+    display: block;
+    color: var(--gray-mid);
 }
 
 @media (prefers-reduced-motion: reduce) {

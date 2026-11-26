@@ -9,16 +9,14 @@
   <meta name="color-scheme" content="dark">
   <script>
     try {
-      var settings = JSON.parse(localStorage.getItem("tvHome.settings") || "null");
-      var scheme = settings && settings.darkMode !== null && settings.darkMode !== undefined
-        ? (settings.darkMode ? "dark" : "light")
-        : "light dark";
+      const settings = JSON.parse(localStorage.getItem("tvHome.settings") || "null");
+      const darkModeSettingIsSet = settings && settings.darkMode !== null && settings.darkMode !== undefined;
+      const selectedScheme = settings && settings.darkMode ? "dark" : "light";
+      const prefferedScheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      const scheme = darkModeSettingIsSet ? selectedScheme : "light dark";
       document.querySelector('meta[name="color-scheme"]').content = scheme;
       document.documentElement.dataset.accent = settings && settings.accent ? settings.accent : "orange";
-      document.documentElement.dataset.scheme =
-        settings && settings.darkMode !== null && settings.darkMode !== undefined
-          ? (settings.darkMode ? "dark" : "light")
-          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.dataset.scheme = darkModeSettingIsSet ? selectedScheme : prefferedScheme;
     } catch (error) {
       document.documentElement.dataset.accent = "orange";
     }
@@ -106,7 +104,7 @@
           <p class="preview" id="preview">aftv.news/…</p>
         </div>
         <input id="code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="12345"
-          aria-label="Downloader code" autocomplete="off" enterkeyhint="go" autofocus>
+          aria-label="Downloader code" autocomplete="off" enterkeyhint="go">
         <button type="submit" class="primary" id="goButton">Go</button>
       </form>
 
@@ -159,6 +157,50 @@
           </button>
         </div>
 
+        <button type="button" class="setting-link" id="openAppearanceButton">
+          <span>Appearance</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
+        <button type="button" class="setting-link" id="openDefaultFocusButton">
+          <span>Default focus</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
+        <button type="button" class="setting-link" id="openDateTimeButton">
+          <span>Date &amp; Time</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
+        <button type="button" class="setting-link" id="openEnginesButton">
+          <span>Enabled search engines</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
+        <div class="settings-actions">
+          <button type="button" id="resetSettingsButton">Reset settings</button>
+          <button type="button" class="primary" id="settingsDoneButton">Done</button>
+        </div>
+      </div>
+
+      <div id="appearanceView" hidden>
+        <div class="settings-heading">
+          <h1 id="appearanceTitle">Appearance</h1>
+          <button type="button" class="icon-button" id="appearanceBackButton" aria-label="Back to settings">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+        </div>
+
         <fieldset class="setting-group">
           <legend>Color theme</legend>
           <div class="color-options" role="radiogroup" aria-label="Accent color">
@@ -195,6 +237,42 @@
             <span aria-hidden="true"></span>
           </label>
         </div>
+      </div>
+
+      <div id="defaultFocusView" hidden>
+        <div class="settings-heading">
+          <h1 id="defaultFocusTitle">Default focus</h1>
+          <button type="button" class="icon-button" id="defaultFocusBackButton" aria-label="Back to settings">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+        </div>
+
+        <fieldset class="setting-group">
+          <legend>Focus this field when the page opens</legend>
+          <div class="date-format-options">
+            <label for="defaultFocusCode">
+              <input type="radio" id="defaultFocusCode" name="defaultFocus" value="code">
+              <span>Downloader code box</span>
+            </label>
+            <label for="defaultFocusSearch">
+              <input type="radio" id="defaultFocusSearch" name="defaultFocus" value="search">
+              <span>Search bar</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
+      <div id="dateTimeView" hidden>
+        <div class="settings-heading">
+          <h1 id="dateTimeTitle">Date &amp; Time</h1>
+          <button type="button" class="icon-button" id="dateTimeBackButton" aria-label="Back to settings">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+        </div>
 
         <div class="setting-row">
           <div>
@@ -207,17 +285,23 @@
           </label>
         </div>
 
-        <button type="button" class="setting-link" id="openEnginesButton">
-          <span>Enabled search engines</span>
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </button>
-
-        <div class="settings-actions">
-          <button type="button" id="resetSettingsButton">Reset settings</button>
-          <button type="button" class="primary" id="settingsDoneButton">Done</button>
-        </div>
+        <fieldset class="setting-group">
+          <legend>Date format</legend>
+          <div class="date-format-options">
+            <label>
+              <input type="radio" name="dateFormat" value="long-day-first">
+              <span>Long day-first <small id="datePreviewDayFirst"></small></span>
+            </label>
+            <label>
+              <input type="radio" name="dateFormat" value="long-month-first">
+              <span>Long month-first <small id="datePreviewMonthFirst"></small></span>
+            </label>
+            <label>
+              <input type="radio" name="dateFormat" value="year-first">
+              <span>YYYY-MM-DD <small id="datePreviewYearFirst"></small></span>
+            </label>
+          </div>
+        </fieldset>
       </div>
 
       <div id="enginesView" hidden>
@@ -243,6 +327,7 @@
           <small id="engineMessage" role="status"></small>
         </fieldset>
       </div>
+      <p class="message" id="settingsMessage" role="status"></p>
     </form>
   </dialog>
 
