@@ -2,23 +2,111 @@
     "use strict";
 
     var STORAGE_KEY = "tvHome.bookmarks";
+    var SETTINGS_KEY = "tvHome.settings";
     var MAX_BOOKMARKS = 12; // two rows, so the home screen never needs scrolling
     var MAX_DIGITS = 10;
+    var DEFAULT_SETTINGS = {
+        accent: "orange",
+        darkMode: null,
+        hour24: false,
+        searchEngines: ["google"],
+        searchEngine: "google",
+    };
     var DEFAULTS = [
         { title: "YouTube", url: "https://www.youtube.com/" },
         { title: "GitHub", url: "https://github.com/" },
         { title: "Speed Test", url: "https://www.fast.com/" },
         { title: "FMHY", url: "https://fmhy.net/video#streaming-sites" },
     ];
+    var SEARCH_ENGINES = {
+        google: { name: "Google", icon: "google-color.svg", url: "https://www.google.com/search?q=" },
+        duckduckgo: { name: "DuckDuckGo", icon: "duckduckgo-color.svg", url: "https://duckduckgo.com/?q=" },
+        brave: { name: "Brave", icon: "brave-color.svg", url: "https://search.brave.com/search?q=" },
+        qwant: { name: "Qwant", icon: "qwant-color.svg", url: "https://www.qwant.com/?q=" },
+        bing: { name: "Bing", icon: "bing-color.svg", url: "https://www.bing.com/search?q=" },
+        startpage: { name: "Startpage", icon: "startpage-color.svg", url: "https://www.startpage.com/sp/search?query=" },
+        ecosia: { name: "Ecosia", icon: "ecosia-color.svg", url: "https://www.ecosia.org/search?q=" },
+    };
 
     function $(id) {
         return document.getElementById(id);
     }
 
+    /* ---------- Settings ---------- */
+    function loadSettings() {
+        try {
+            var saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+            if (saved && typeof saved === "object") {
+                var loaded = Object.assign({}, DEFAULT_SETTINGS, saved);
+                delete loaded.reduceMotion;
+                if (!Array.isArray(loaded.searchEngines) || !loaded.searchEngines.length) {
+                    loaded.searchEngines = DEFAULT_SETTINGS.searchEngines.slice();
+                }
+                if (!loaded.searchEngines.includes(loaded.searchEngine)) {
+                    loaded.searchEngine = loaded.searchEngines[0];
+                }
+                return loaded;
+            }
+        } catch (error) {
+            /* storage blocked or damaged: use defaults */
+        }
+        return Object.assign({}, DEFAULT_SETTINGS);
+    }
+
+    function saveSettings() {
+        try {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch (error) {
+            /* settings will remain active until the page reloads */
+        }
+    }
+
+    var systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+    var settings = loadSettings();
+
+    function resolvedDarkMode() {
+        return settings.darkMode === null ? systemDark.matches : settings.darkMode;
+    }
+
+    function applySettings() {
+        var dark = resolvedDarkMode();
+        document.documentElement.dataset.accent = settings.accent;
+        document.documentElement.dataset.scheme = dark ? "dark" : "light";
+        document.querySelector('meta[name="color-scheme"]').content = settings.darkMode === null
+            ? "light dark"
+            : (dark ? "dark" : "light");
+        document.querySelector('meta[name="theme-color"]').content = dark ? "#0E0E10" : "#F2F2F5";
+
+        $("darkMode").checked = dark;
+        $("darkModeDescription").textContent = settings.darkMode === null
+            ? "Following system: " + (dark ? "dark" : "light")
+            : "Manually set to " + (dark ? "dark" : "light");
+        $("hour24").checked = Boolean(settings.hour24);
+        var accentInput = document.querySelector('input[name="accent"][value="' + settings.accent + '"]');
+        if (accentInput) accentInput.checked = true;
+        document.querySelectorAll('input[name="searchEngineEnabled"]').forEach(function (input) {
+            input.checked = settings.searchEngines.includes(input.value);
+        });
+        updateSearchEnginePicker();
+        tick();
+    }
+
+    function resetSettings() {
+        settings = Object.assign({}, DEFAULT_SETTINGS, {
+            searchEngines: DEFAULT_SETTINGS.searchEngines.slice(),
+        });
+        saveSettings();
+        applySettings();
+    }
+
     /* ---------- Clock ---------- */
     function tick() {
         var now = new Date();
-        var time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        var time = now.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: settings.hour24 ? false : true,
+        });
         var date = now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
         if ($("time").textContent !== time) $("time").textContent = time;
         if ($("date").textContent !== date) $("date").textContent = date;
@@ -54,6 +142,41 @@
     /* ---------- Search bar ---------- */
     var query = $("query");
 
+    function updateSearchEnginePicker() {
+        var enabled = settings.searchEngines.filter(function (id) {
+            return SEARCH_ENGINES[id];
+        });
+        var picker = $("searchEnginePicker");
+        var select = $("searchEngine");
+        var search = $("searchForm");
+
+        select.textContent = "";
+        enabled.forEach(function (id) {
+            var option = document.createElement("option");
+            option.value = id;
+            option.textContent = SEARCH_ENGINES[id].name;
+            select.appendChild(option);
+        });
+
+        if (!enabled.includes(settings.searchEngine)) settings.searchEngine = enabled[0] || "google";
+        select.value = settings.searchEngine;
+        $("searchEngineIcon").src = "assets/search-icons/" + SEARCH_ENGINES[settings.searchEngine].icon;
+        $("searchEngineIcon").alt = "";
+
+        var multiple = enabled.length > 1;
+        picker.hidden = !multiple;
+        search.classList.toggle("has-engine-picker", multiple);
+        var name = SEARCH_ENGINES[settings.searchEngine].name;
+        query.placeholder = "Search " + name + " or type a web address";
+        query.setAttribute("aria-label", "Search " + name + " or type a web address");
+    }
+
+    $("searchEngine").addEventListener("change", function () {
+        settings.searchEngine = this.value;
+        saveSettings();
+        updateSearchEnginePicker();
+    });
+
     query.addEventListener("input", function () {
         $("searchButton").textContent = toUrl(query.value) ? "Open site" : "Search";
     });
@@ -62,7 +185,13 @@
         event.preventDefault();
         var text = query.value.trim();
         if (!text) return query.focus();
-        window.location.href = toUrl(text) || "https://www.google.com/search?q=" + encodeURIComponent(text);
+        var url = toUrl(text);
+        if (url) {
+            window.location.href = url;
+        } else {
+            var engine = SEARCH_ENGINES[settings.searchEngine] || SEARCH_ENGINES.google;
+            window.location.href = engine.url + encodeURIComponent(text);
+        }
     });
 
     /* ---------- Code entry ---------- */
@@ -226,6 +355,7 @@
     function closeOverlay(target) {
         overlay.hidden = true;
         $("app").inert = false;
+        applySettings();
         renderHome();
         (target ? target() : $("editButton")).focus();
     }
@@ -314,12 +444,98 @@
         showList(editing);
     });
 
+    /* ---------- Settings panel ---------- */
+    var settingsDialog = $("settingsDialog");
+
+    function showSettingsView(showEngines) {
+        $("settingsMain").hidden = showEngines;
+        $("enginesView").hidden = !showEngines;
+        settingsDialog.setAttribute("aria-labelledby", showEngines ? "enginesTitle" : "settingsTitle");
+        (showEngines ? $("enginesBackButton") : $("openEnginesButton")).focus();
+    }
+
+    $("settingsButton").addEventListener("click", function () {
+        applySettings();
+        $("settingsMain").hidden = false;
+        $("enginesView").hidden = true;
+        settingsDialog.setAttribute("aria-labelledby", "settingsTitle");
+        settingsDialog.showModal();
+        $("settingsCloseButton").focus();
+    });
+
+    $("openEnginesButton").addEventListener("click", function () {
+        showSettingsView(true);
+    });
+
+    $("enginesBackButton").addEventListener("click", function () {
+        showSettingsView(false);
+    });
+
+    $("settingsCloseButton").addEventListener("click", function () {
+        settingsDialog.close();
+    });
+
+    $("settingsDoneButton").addEventListener("click", function () {
+        settingsDialog.close();
+    });
+
+    document.querySelectorAll('input[name="accent"]').forEach(function (input) {
+        input.addEventListener("change", function () {
+            settings.accent = input.value;
+            saveSettings();
+            applySettings();
+        });
+    });
+
+    $("darkMode").addEventListener("change", function () {
+        settings.darkMode = this.checked;
+        saveSettings();
+        applySettings();
+    });
+
+    $("hour24").addEventListener("change", function () {
+        settings.hour24 = this.checked;
+        saveSettings();
+        tick();
+    });
+
+    document.querySelectorAll('input[name="searchEngineEnabled"]').forEach(function (input) {
+        input.addEventListener("change", function () {
+            if (!this.checked && settings.searchEngines.length === 1) {
+                this.checked = true;
+                $("engineMessage").textContent = "Keep at least one search engine enabled.";
+                return;
+            }
+            $("engineMessage").textContent = "";
+            if (this.checked) {
+                if (!settings.searchEngines.includes(this.value)) settings.searchEngines.push(this.value);
+            } else {
+                settings.searchEngines = settings.searchEngines.filter(function (id) {
+                    return id !== input.value;
+                });
+            }
+            if (!settings.searchEngines.includes(settings.searchEngine)) {
+                settings.searchEngine = settings.searchEngines[0];
+            }
+            saveSettings();
+            applySettings();
+        });
+    });
+
+    $("resetSettingsButton").addEventListener("click", resetSettings);
+
+    if (systemDark.addEventListener) {
+        systemDark.addEventListener("change", function () {
+            if (settings.darkMode === null) applySettings();
+        });
+    }
+
     /* ---------- Remote control navigation ---------- */
     var ARROWS = { ArrowLeft: "left", ArrowUp: "up", ArrowRight: "right", ArrowDown: "down" };
     var BACK_KEYS = new Set(["Escape", "Back", "GoBack", "BrowserBack", "XF86Back"]);
 
     function focusable() {
-        var scope = overlay.hidden ? $("app") : overlay;
+        var scope = settingsDialog.open ? settingsDialog : (overlay.hidden ? $("app") : overlay);
         return Array.prototype.filter.call(scope.querySelectorAll("a[href], button, input"), function (element) {
             return element.getClientRects().length > 0;
         });
@@ -358,6 +574,13 @@
     }
 
     function handleBackKey(event, typing) {
+        if (settingsDialog.open) {
+            if (!BACK_KEYS.includes(event.key) && !(event.key === "Backspace" && !typing)) return false;
+            event.preventDefault();
+            if (!$("enginesView").hidden) showSettingsView(false);
+            else settingsDialog.close();
+            return true;
+        }
         if (overlay.hidden) return false;
         if (!BACK_KEYS.includes(event.key) && !(event.key === "Backspace" && !typing)) return false;
         event.preventDefault();
@@ -366,7 +589,7 @@
     }
 
     function handleNumberKey(event, typing) {
-        if (!overlay.hidden || typing || !/^\d$/.test(event.key)) return false;
+        if (settingsDialog.open || !overlay.hidden || typing || !/^\d$/.test(event.key)) return false;
         code.focus();
         return true;
     }
@@ -408,7 +631,7 @@
     document.addEventListener("keydown", function (event) {
         if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
         var active = document.activeElement;
-        var typing = active?.tagName === "INPUT";
+        var typing = active?.tagName === "INPUT" && (active.type === "text" || active.type === "search");
         var direction = ARROWS[event.key];
 
         if (handleBackKey(event, typing)) return;

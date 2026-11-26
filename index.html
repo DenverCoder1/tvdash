@@ -7,6 +7,22 @@
   <meta name="theme-color" content="#0E0E10">
   <meta name="description" content="TV browser home page with clock, code entry, search and bookmarks.">
   <meta name="color-scheme" content="dark">
+  <script>
+    try {
+      var settings = JSON.parse(localStorage.getItem("tvHome.settings") || "null");
+      var scheme = settings && settings.darkMode !== null && settings.darkMode !== undefined
+        ? (settings.darkMode ? "dark" : "light")
+        : "light dark";
+      document.querySelector('meta[name="color-scheme"]').content = scheme;
+      document.documentElement.dataset.accent = settings && settings.accent ? settings.accent : "orange";
+      document.documentElement.dataset.scheme =
+        settings && settings.darkMode !== null && settings.darkMode !== undefined
+          ? (settings.darkMode ? "dark" : "light")
+          : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    } catch (error) {
+      document.documentElement.dataset.accent = "orange";
+    }
+  </script>
   <title>TV Dash</title>
   <link rel="icon" type="image/png" href="assets/tvhome.png">
   <link rel="apple-touch-icon" href="assets/tvhome.png">
@@ -39,16 +55,40 @@
         <div class="time" id="time">--:--</div>
         <div class="date" id="date"></div>
       </div>
-      <button type="button" id="editButton">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" />
-        </svg>
-        Edit bookmarks
-      </button>
+      <div class="header-actions">
+        <button type="button" id="editButton">
+          <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"
+            stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+          </svg>
+          Edit bookmarks
+        </button>
+        <button type="button" class="icon-button" id="settingsButton" aria-label="Open settings" title="Settings">
+          <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round"
+            stroke-linejoin="round" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <main>
       <form class="search" id="searchForm" role="search" novalidate>
+        <div class="search-engine-picker" id="searchEnginePicker" hidden>
+          <img id="searchEngineIcon" src="assets/search-icons/google-color.svg" alt="" aria-hidden="true">
+          <select id="searchEngine" aria-label="Search engine">
+            <option value="google">Google</option>
+            <option value="duckduckgo">DuckDuckGo</option>
+            <option value="brave">Brave</option>
+            <option value="qwant">Qwant</option>
+            <option value="bing">Bing</option>
+            <option value="startpage">Startpage</option>
+            <option value="ecosia">Ecosia</option>
+          </select>
+        </div>
         <div class="field">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20" />
@@ -105,6 +145,105 @@
       </form>
     </div>
   </div>
+
+  <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle" closedby="any">
+    <form id="settingsForm" novalidate>
+      <div id="settingsMain">
+        <div class="settings-heading">
+          <h1 id="settingsTitle">Settings</h1>
+          <button type="button" class="icon-button" id="settingsCloseButton" aria-label="Close settings">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+
+        <fieldset class="setting-group">
+          <legend>Color theme</legend>
+          <div class="color-options" role="radiogroup" aria-label="Accent color">
+            <label class="color-option orange" title="Orange">
+              <input type="radio" name="accent" value="orange">
+              <span aria-hidden="true"></span>
+              <span class="sr-only">Orange</span>
+            </label>
+            <label class="color-option blue" title="Blue">
+              <input type="radio" name="accent" value="blue">
+              <span aria-hidden="true"></span>
+              <span class="sr-only">Blue</span>
+            </label>
+            <label class="color-option purple" title="Purple">
+              <input type="radio" name="accent" value="purple">
+              <span aria-hidden="true"></span>
+              <span class="sr-only">Purple</span>
+            </label>
+            <label class="color-option green" title="Green">
+              <input type="radio" name="accent" value="green">
+              <span aria-hidden="true"></span>
+              <span class="sr-only">Green</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="setting-row">
+          <div>
+            <span class="setting-label">Dark mode</span>
+            <small id="darkModeDescription">Follow system or choose manually</small>
+          </div>
+          <label class="switch" aria-label="Dark mode">
+            <input type="checkbox" id="darkMode">
+            <span aria-hidden="true"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div>
+            <span class="setting-label">24-hour clock</span>
+            <small>Show time as 14:30 instead of 2:30 PM</small>
+          </div>
+          <label class="switch" aria-label="24-hour clock">
+            <input type="checkbox" id="hour24">
+            <span aria-hidden="true"></span>
+          </label>
+        </div>
+
+        <button type="button" class="setting-link" id="openEnginesButton">
+          <span>Enabled search engines</span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
+        <div class="settings-actions">
+          <button type="button" id="resetSettingsButton">Reset settings</button>
+          <button type="button" class="primary" id="settingsDoneButton">Done</button>
+        </div>
+      </div>
+
+      <div id="enginesView" hidden>
+        <div class="settings-heading">
+          <h1 id="enginesTitle">Enabled search engines</h1>
+          <button type="button" class="icon-button" id="enginesBackButton" aria-label="Back to settings">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+        </div>
+        <fieldset class="engine-settings">
+          <legend class="sr-only">Enabled search engines</legend>
+          <div class="engine-options">
+            <label><input type="checkbox" name="searchEngineEnabled" value="google"> Google</label>
+            <label><input type="checkbox" name="searchEngineEnabled" value="duckduckgo"> DuckDuckGo</label>
+            <label><input type="checkbox" name="searchEngineEnabled" value="brave"> Brave</label>
+            <label><input type="checkbox" name="searchEngineEnabled" value="qwant"> Qwant</label>
+            <label><input type="checkbox" name="searchEngineEnabled" value="bing"> Bing</label>
+            <label><input type="checkbox" name="searchEngineEnabled" value="startpage"> Startpage</label>
+            <label><input type="checkbox" name="searchEngineEnabled" value="ecosia"> Ecosia</label>
+          </div>
+          <small id="engineMessage" role="status"></small>
+        </fieldset>
+      </div>
+    </form>
+  </dialog>
 
 </body>
 
