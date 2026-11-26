@@ -2,7 +2,7 @@
 
 TV browser home page supporting Google Search, AFTVnews Downloader, a clock, and customizable bookmarks.
 
-<img width="1680" height="889" alt="image" src="https://github.com/user-attachments/assets/72a38c60-6d04-4a5a-82d0-359e9d850753" />
+<img width="1382" height="880" alt="image" src="https://github.com/user-attachments/assets/34f0635c-9610-4ec2-a82a-0ab197215e67" />
 
 ## Usage
 
