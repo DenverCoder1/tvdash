@@ -148,15 +148,19 @@
             );
         }
         const preset = DATE_FORMATS[format];
-        if (format === "long-day-first") {
-            return new Intl.DateTimeFormat(preset.locale, preset.options)
-                .formatToParts(now)
-                .map(function (part) {
-                    return part.type === "weekday" ? part.value + "," : part.value;
-                })
-                .join("");
-        }
-        return now.toLocaleDateString(preset.locale, preset.options);
+        const parts = new Intl.DateTimeFormat(preset.locale, preset.options).formatToParts(now);
+        const weekday = parts.find(function (part) {
+            return part.type === "weekday";
+        }).value;
+        const day = parts.find(function (part) {
+            return part.type === "day";
+        }).value;
+        const month = parts.find(function (part) {
+            return part.type === "month";
+        }).value;
+        return format === "long-day-first"
+            ? weekday + ", " + day + " " + month
+            : weekday + ", " + month + " " + day;
     }
 
     function tick() {
